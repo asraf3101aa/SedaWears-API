@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SedaWears.Domain.Entities;
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Infrastructure.Persistence.Configurations;
 
@@ -11,7 +12,10 @@ public class RestockSubscriptionConfiguration : IEntityTypeConfiguration<Restock
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Email).IsRequired().HasMaxLength(256);
-        builder.Property(r => r.Size).IsRequired().HasMaxLength(16);
+        builder.Property(r => r.Size)
+            .HasConversion<string>()
+            .IsRequired()
+            .HasMaxLength(32);
 
         builder.HasOne(r => r.Product)
             .WithMany()

@@ -29,8 +29,25 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey(o => o.ShopId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(o => o.Guest)
+            .WithMany()
+            .HasForeignKey(o => o.GuestId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Property(o => o.DiscountAmount)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0)
+            .IsRequired();
+
+        builder.HasOne(o => o.PromoCode)
+            .WithMany()
+            .HasForeignKey(o => o.PromoCodeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(o => o.UserId);
+        builder.HasIndex(o => o.GuestId);
         builder.HasIndex(o => o.ShopId);
         builder.HasIndex(o => o.Status);
+        builder.HasIndex(o => o.PromoCodeId);
     }
 }

@@ -2,12 +2,18 @@ openapi: 3.0.3
 info:
   title: Luga Store API
   version: 1.0.0
+  description: API documentation for the Luga Store backend, listing all customer, shop manager/owner, and administrator endpoints.
+
+security:
+  - CookieAuth: []
 
 paths:
-  /customer/auth/login:
+  # --- AUTHENTICATION ---
+  /auth/login:
     post:
-      tags: [Customer Auth]
-      summary: Customer login
+      tags: [Authentication]
+      summary: Login to an account and receive session cookie
+      security: []
       requestBody:
         required: true
         content:
@@ -16,66 +22,298 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Successful login
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
+          description: Login successful, sets session cookie.
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
-  /admin/auth/login:
+  /auth/register:
     post:
-      tags: [Admin Auth]
-      summary: Admin login
+      tags: [Authentication]
+      summary: Register a new customer account
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
         '200':
-          description: Successful login
+          description: Registration successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
-  /partner/auth/login:
+  /auth/logout:
     post:
-      tags: [Partner Auth]
-      summary: Partner login
+      tags: [Authentication]
+      summary: Sign out and invalidate session cookie
+      responses:
+      '200':
+        description: Logout successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request password reset link
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/ForgotPasswordRequest'
       responses:
         '200':
-          description: Successful login
+          description: Reset email sent
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                type: object
+                properties:
+                  message:
+                    type: string
 
-  /partner/{partnerId}/manager/auth/login:
+  /auth/reset-password:
     post:
-      tags: [Partner Manager Auth]
-      summary: Partner manager login
+      tags: [Authentication]
+      summary: Reset account password using token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # --- INVITATIONS ---
+  /invitations/accept-owner:
+    post:
+      tags: [Invitations]
+      summary: Accept a shop owner invitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptShopMemberInvitationRequest'
+      responses:
+        '200':
+          description: Invitation accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /invitations/accept-manager:
+    post:
+      tags: [Invitations]
+      summary: Accept a shop manager invitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptShopMemberInvitationRequest'
+      responses:
+        '200':
+          description: Invitation accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /invitations/accept-admin:
+    post:
+      tags: [Invitations]
+      summary: Accept an admin invitation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptAdminInvitationRequest'
+      responses:
+        '200':
+          description: Invitation accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /invitations/owner-details:
+    get:
+      tags: [Invitations]
+      summary: Get details of a shop owner invitation
+      security: []
       parameters:
-        - name: partnerId
+        - name: shopId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitation details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationDetails'
+
+  /invitations/manager-details:
+    get:
+      tags: [Invitations]
+      summary: Get details of a shop manager invitation
+      security: []
+      parameters:
+        - name: shopId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitation details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationDetails'
+
+  /invitations/admin-details:
+    get:
+      tags: [Invitations]
+      summary: Get details of an admin invitation
+      security: []
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invitation details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminInvitationDetails'
+
+  # --- GLOBAL CATEGORIES (Admin/Owner/Manager) ---
+  /categories:
+    get:
+      tags: [Categories (Global)]
+      summary: Get all global or shop-linked categories
+      security: []
+      parameters:
+        - name: shopId
+          in: query
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: name
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Categories retrieved
+
+    post:
+      tags: [Categories (Global)]
+      summary: Create a new category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertCategoryRequest'
+      responses:
+        '200':
+          description: Category created successfully
+
+  /categories/{id}:
+    put:
+      tags: [Categories (Global)]
+      summary: Update a category
+      parameters:
+        - name: id
           in: path
           required: true
           schema:
@@ -85,20 +323,1786 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/UpsertCategoryRequest'
       responses:
         '200':
-          description: Successful login
+          description: Category updated successfully
+
+    delete:
+      tags: [Categories (Global)]
+      summary: Delete a category (high performance)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: shopId
+          in: query
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Category deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /categories/{id}/status:
+    patch:
+      tags: [Categories (Global)]
+      summary: Toggle category active status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryActiveStatusRequest'
+      responses:
+        '200':
+          description: Active status updated successfully
+
+  /categories/reorder:
+    post:
+      tags: [Categories (Global)]
+      summary: Reorder categories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderCategoriesRequest'
+      responses:
+        '200':
+          description: Reordered successfully
+
+  # --- SHOP-LEVEL CATEGORIES ---
+  /shops/{shopId}/categories:
+    get:
+      tags: [Categories (Shop)]
+      summary: Get all categories of a shop
+      security: []
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: name
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Categories list retrieved
+
+    post:
+      tags: [Categories (Shop)]
+      summary: Create a category under a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopUpsertCategoryRequest'
+      responses:
+        '200':
+          description: Category created successfully
+
+  /shops/{shopId}/categories/{id}:
+    put:
+      tags: [Categories (Shop)]
+      summary: Update a category under a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopUpsertCategoryRequest'
+      responses:
+        '200':
+          description: Category updated successfully
+
+    delete:
+      tags: [Categories (Shop)]
+      summary: Delete a shop category
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Category deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /shops/{shopId}/categories/{id}/status:
+    patch:
+      tags: [Categories (Shop)]
+      summary: Toggle active status of a shop category
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryActiveStatusRequest'
+      responses:
+        '200':
+          description: Status toggled successfully
+
+  /shops/{shopId}/categories/reorder:
+    post:
+      tags: [Categories (Shop)]
+      summary: Reorder categories of a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderCategoriesRequest'
+      responses:
+        '200':
+          description: Reordered successfully
+
+  # --- GLOBAL PRODUCTS ---
+  /products:
+    get:
+      tags: [Products (Global)]
+      summary: Get list of products
+      security: []
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: shopId
+          in: query
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of products
+
+    post:
+      tags: [Products (Global)]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertProductRequest'
+      responses:
+        '200':
+          description: Product created successfully
+
+  /products/{id}:
+    get:
+      tags: [Products (Global)]
+      summary: Get details of a single product
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product details
+
+    put:
+      tags: [Products (Global)]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+
+    delete:
+      tags: [Products (Global)]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Product deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /products/{id}/sizes:
+    patch:
+      tags: [Products (Global)]
+      summary: Sync product size inventories
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductSizesRequest'
+      responses:
+        '200':
+          description: Product sizes updated successfully
+
+  /products/{id}/status:
+    patch:
+      tags: [Products (Global)]
+      summary: Change product active status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductActiveStatusRequest'
+      responses:
+        '200':
+          description: Status updated successfully
+
+  # --- SHOP-LEVEL PRODUCTS ---
+  /shops/{shopId}/products:
+    get:
+      tags: [Products (Shop)]
+      summary: Get products of a shop
+      security: []
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shop products
+
+    post:
+      tags: [Products (Shop)]
+      summary: Create a product in a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertProductRequest'
+      responses:
+        '200':
+          description: Product created successfully
+
+  /shops/{shopId}/products/{id}:
+    put:
+      tags: [Products (Shop)]
+      summary: Update a product in a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+
+    delete:
+      tags: [Products (Shop)]
+      summary: Delete a product in a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Product deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /shops/{shopId}/products/{id}/status:
+    patch:
+      tags: [Products (Shop)]
+      summary: Toggle active status of a product in a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductActiveStatusRequest'
+      responses:
+        '200':
+          description: Product status updated successfully
+
+  # --- CUSTOMER PROFILE ---
+  # --- CUSTOMER PROFILE ---
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Get the authenticated user's profile with all roles
+      responses:
+        '200':
+          description: User profile details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: '#/components/schemas/UserDto'
+
+    patch:
+      tags: [Profile]
+      summary: Update the authenticated user's profile details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+      '200':
+        description: Profile updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /profile/password:
+    patch:
+      tags: [Profile]
+      summary: Change password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeUserPasswordRequest'
+      responses:
+      '200':
+        description: Password changed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /profile/shops:
+    get:
+      tags: [Profile]
+      summary: Get shops managed or owned by the current user
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of user owned/managed shops
+
+  # --- CUSTOMER ADDRESSES ---
+  /profile/addresses:
+    get:
+      tags: [Addresses]
+      summary: Get customer's saved addresses (max 5)
+      responses:
+        '200':
+          description: List of saved addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddressDto'
+
+    post:
+      tags: [Addresses]
+      summary: Add a new shipping address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+      responses:
+        '200':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /profile/addresses/{id}:
+    delete:
+      tags: [Addresses]
+      summary: Delete a shipping address
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Address deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  # --- CUSTOMER CART ---
+  /profile/cart:
+    get:
+      tags: [Cart]
+      summary: Retrieve the current user's shopping cart
+      responses:
+        '200':
+          description: Cart details
+
+    post:
+      tags: [Cart]
+      summary: Add an item to the cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '200':
+          description: Added successfully
+
+    delete:
+      tags: [Cart]
+      summary: Clear all items in the cart
+      responses:
+      '200':
+        description: Cart cleared successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /profile/cart/{id}:
+    put:
+      tags: [Cart]
+      summary: Update quantity or size of a cart item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartRequest'
+      responses:
+        '200':
+          description: Updated successfully
+
+    delete:
+      tags: [Cart]
+      summary: Remove an item from the cart
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Item removed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  # --- WISHLIST ---
+  /profile/wishlist:
+    get:
+      tags: [Wishlist]
+      summary: Get the current user's wishlist
+      responses:
+        '200':
+          description: Wishlist retrieved
+
+  /profile/wishlist/{productId}:
+    post:
+      tags: [Wishlist]
+      summary: Add a product to the wishlist (with unique composite check)
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product added to wishlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+    delete:
+      tags: [Wishlist]
+      summary: Remove a product from the wishlist
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Product removed from wishlist
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  # --- ORDERS (Checkout & History) ---
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Complete order checkout (supports guests and registered users)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '200':
+          description: Checkout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /profile/orders:
+    get:
+      tags: [Orders]
+      summary: Get the authenticated customer's order history
+      responses:
+        '200':
+          description: Order history retrieved
+
+  /admin/orders:
+    get:
+      tags: [Orders (Admin)]
+      summary: Get customer orders list
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of orders
+
+  /admin/orders/{orderId}/status:
+    patch:
+      tags: [Orders (Admin)]
+      summary: Update status of an order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              description: OrderStatus enum value (e.g. 0=Pending, 1=Processing, 2=Shipped, 3=Delivered, 4=Cancelled)
+      responses:
+        '200':
+          description: Order status updated successfully
+
+  # --- MEDIA MANAGEMENT ---
+  /media/upload-url:
+    post:
+      tags: [Media]
+      summary: Request presigned S3 URLs to upload files
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileS3UploadUrlRequest'
+      responses:
+        '200':
+          description: Upload URLs generated
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileUploadUrl'
+
+  /media/{filename}:
+    delete:
+      tags: [Media]
+      summary: Delete an uploaded file
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+      '200':
+        description: File deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  # --- NEWSLETTER ---
+  /customer/newsletter/subscribe:
+    post:
+      tags: [Newsletter]
+      summary: Subscribe to the newsletter
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewsletterRequest'
+      responses:
+        '200':
+          description: Subscription successful
+
+  /customer/newsletter/validate-unsubscribe/{token}:
+    get:
+      tags: [Newsletter]
+      summary: Validate an unsubscribe token
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: Invalid unsubscribe link
+
+  /customer/newsletter/confirm-unsubscribe:
+    post:
+      tags: [Newsletter]
+      summary: Confirm unsubscription using token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnsubscribeConfirmationRequest'
+      responses:
+        '200':
+          description: Unsubscribed successfully
+
+  /customer/newsletter/unsubscribe:
+    post:
+      tags: [Newsletter]
+      summary: Direct unsubscribe request
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewsletterRequest'
+      responses:
+        '200':
+          description: Unsubscribed successfully
+
+  # --- USERS (Admin-only management) ---
+  /users/admins:
+    get:
+      tags: [Users (Admin)]
+      summary: Get paginated list of administrators
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of admins retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+
+    post:
+      tags: [Users (Admin)]
+      summary: Invite a new administrator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteAdminRequest'
+      responses:
+        '200':
+          description: Invitation sent successfully
+
+  /users/admins/invited:
+    get:
+      tags: [Users (Admin)]
+      summary: Get paginated list of invited administrators
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of invited admins retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInvitedUserList'
+
+  /users/customers:
+    get:
+      tags: [Users (Admin)]
+      summary: Get paginated list of customers
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of customers retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+
+  /users/{id}:
+    get:
+      tags: [Users (Admin)]
+      summary: Retrieve a single user profile by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+
+    patch:
+      tags: [Users (Admin)]
+      summary: Update a user's details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+      '200':
+        description: User updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /users/admins/{id}:
+    delete:
+      tags: [Users (Admin)]
+      summary: Delete an administrator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Admin deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /users/customers/{id}:
+    delete:
+      tags: [Users (Admin)]
+      summary: Delete a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Customer deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /users/admins/{id}/resend-invitation:
+    post:
+      tags: [Users (Admin)]
+      summary: Resend admin invitation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Invitation resent successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /users/admins/{id}/invitation:
+    delete:
+      tags: [Users (Admin)]
+      summary: Delete pending admin invitation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Invitation deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  # --- SHOPS (Admin/Owner/Manager) ---
+  /shops:
+    get:
+      tags: [Shops]
+      summary: Get paginated list of shops (Admin only)
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of shops
+
+    post:
+      tags: [Shops]
+      summary: Create a new shop (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertShopRequest'
+      responses:
+        '200':
+          description: Shop created successfully
+
+  /shops/{id}:
+    get:
+      tags: [Shops]
+      summary: Get details of a single shop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Shop details
+
+    put:
+      tags: [Shops]
+      summary: Update a shop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertShopRequest'
+      responses:
+        '200':
+          description: Shop updated successfully
+
+    delete:
+      tags: [Shops]
+      summary: Delete a shop (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Shop deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /shops/{id}/status:
+    patch:
+      tags: [Shops]
+      summary: Toggle active status of a shop (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShopActiveStatusRequest'
+      responses:
+        '200':
+          description: Shop active status updated successfully
+
+  # --- SHOP OWNERS ---
+  /shops/{shopId}/owners:
+    get:
+      tags: [Shop Members (Owners)]
+      summary: Get all owners for a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of shop owners
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+
+    post:
+      tags: [Shop Members (Owners)]
+      summary: Invite a new owner to a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopMemberInviteRequest'
+      responses:
+        '200':
+          description: Owner invited successfully
+
+  /shops/{shopId}/owners/invited:
+    get:
+      tags: [Shop Members (Owners)]
+      summary: Get paginated list of invited owners for a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of invited shop owners retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInvitedUserList'
+
+  /shops/{shopId}/owners/{ownerId}:
+    get:
+      tags: [Shop Members (Owners)]
+      summary: Get details of a specific shop owner
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Shop owner details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+
+    patch:
+      tags: [Shop Members (Owners)]
+      summary: Update a shop owner's details
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShopMemberRequest'
+      responses:
+        '200':
+          description: Owner updated successfully
+
+    delete:
+      tags: [Shop Members (Owners)]
+      summary: Delete a shop owner (Admin only)
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Owner deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /shops/{shopId}/owners/{ownerId}/resend-invitation:
+    post:
+      tags: [Shop Members (Owners)]
+      summary: Resend shop owner invitation
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Invitation resent successfully
+
+  /shops/{shopId}/owners/{ownerId}/invitation:
+    delete:
+      tags: [Shop Members (Owners)]
+      summary: Delete a pending shop owner invitation
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ownerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Invitation deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  # --- SHOP MANAGERS ---
+  /shops/{shopId}/managers:
+    get:
+      tags: [Shop Members (Managers)]
+      summary: Get all managers for a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of shop managers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+
+    post:
+      tags: [Shop Members (Managers)]
+      summary: Invite a new manager to a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopMemberInviteRequest'
+      responses:
+        '200':
+          description: Manager invited successfully
+
+  /shops/{shopId}/managers/invited:
+    get:
+      tags: [Shop Members (Managers)]
+      summary: Get paginated list of invited managers for a shop
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of invited shop managers retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInvitedUserList'
+
+  /shops/{shopId}/managers/{managerId}:
+    get:
+      tags: [Shop Members (Managers)]
+      summary: Get details of a specific shop manager
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Manager details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+
+    patch:
+      tags: [Shop Members (Managers)]
+      summary: Update shop manager details
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShopMemberRequest'
+      responses:
+        '200':
+          description: Manager updated successfully
+
+    delete:
+      tags: [Shop Members (Managers)]
+      summary: Delete a shop manager
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Manager deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  /shops/{shopId}/managers/{managerId}/resend-invitation:
+    post:
+      tags: [Shop Members (Managers)]
+      summary: Resend shop manager invitation
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Invitation resent successfully
+
+  /shops/{shopId}/managers/{managerId}/invitation:
+    delete:
+      tags: [Shop Members (Managers)]
+      summary: Delete pending shop manager invitation
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: managerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+      '200':
+        description: Invitation deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+  # --- DASHBOARD SUMMARIES (Planned) ---
+  /admin/dashboard/summary:
+    get:
+      tags: [Dashboards]
+      summary: Get the general administration dashboard summary
+      security:
+        - CookieAuth: []
+      responses:
+        '200':
+          description: Admin dashboard details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardSummaryDto'
+
+  /shops/{shopId}/dashboard/summary:
+    get:
+      tags: [Dashboards]
+      summary: Get the dashboard summary of a specific shop
+      security:
+        - CookieAuth: []
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Shop dashboard details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopDashboardSummaryDto'
 
 components:
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: .AspNetCore.Identity.Application
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or validation failed
+    Unauthorized:
+      description: Unauthenticated or missing permissions
+    NotFound:
+      description: Requested resource not found
+
   schemas:
     LoginRequest:
       type: object
@@ -110,16 +2114,193 @@ components:
         password:
           type: string
           format: password
+        rememberMe:
+          type: boolean
+          default: false
 
-    AuthResponse:
+    RegisterRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required: [email, token, newPassword]
+      properties:
+        email:
+          type: string
+          format: email
+        token:
+          type: string
+        newPassword:
+          type: string
+
+    AcceptShopMemberInvitationRequest:
+      type: object
+      required: [shopId, email, token, firstName, lastName, password]
+      properties:
+        shopId:
+          type: integer
+        email:
+          type: string
+          format: email
+        token:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        password:
+          type: string
+
+    AcceptAdminInvitationRequest:
+      type: object
+      required: [email, token, firstName, lastName, password]
+      properties:
+        email:
+          type: string
+          format: email
+        token:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        password:
+          type: string
+
+    InvitationDetails:
       type: object
       properties:
-        accessToken:
+        shopId:
+          type: integer
+        shopName:
           type: string
-        user:
-          $ref: '#/components/schemas/UserProfile'
+        email:
+          type: string
 
-    UserProfile:
+    AdminInvitationDetails:
+      type: object
+      properties:
+        email:
+          type: string
+
+    UpsertCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        shopId:
+          type: integer
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+
+    ShopUpsertCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    UpdateCategoryActiveStatusRequest:
+      type: object
+      required: [isActive]
+      properties:
+        isActive:
+          type: boolean
+        shopId:
+          type: integer
+          nullable: true
+
+    ReorderCategoriesRequest:
+      type: object
+      required: [orders]
+      properties:
+        shopId:
+          type: integer
+          nullable: true
+        orders:
+          type: array
+          items:
+            type: object
+            required: [id, displayOrder]
+            properties:
+              id:
+                type: integer
+              displayOrder:
+                type: integer
+
+    UpsertProductRequest:
+      type: object
+      required: [name, price, categoryId]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: decimal
+        gender:
+          type: string
+          enum: [Men, Women, Unisex]
+        categoryId:
+          type: integer
+        images:
+          type: array
+          items:
+            type: string
+
+    UpdateProductSizesRequest:
+      type: object
+      required: [sizes]
+      properties:
+        sizes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSizeDto'
+
+    ProductSizeDto:
+      type: object
+      required: [size, stock]
+      properties:
+        size:
+          type: string
+          enum: [XS, S, M, L, XL, XXL, XXXL]
+        stock:
+          type: integer
+
+    UpdateProductActiveStatusRequest:
+      type: object
+      required: [isActive]
+      properties:
+        isActive:
+          type: boolean
+
+    UserDto:
       type: object
       properties:
         id:
@@ -131,16 +2312,83 @@ components:
         email:
           type: string
           format: email
-        avatarPath:
-          type: string
+          nullable: true
         phone:
           type: string
-        addresses:
+          nullable: true
+        avatarFileName:
+          type: string
+          nullable: true
+        isEmailConfirmed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    InvitedUserDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+
+    PaginatedUserList:
+      type: object
+      properties:
+        items:
           type: array
           items:
-            $ref: '#/components/schemas/Address'
+            $ref: '#/components/schemas/UserDto'
+        totalCount:
+          type: integer
+        pageIndex:
+          type: integer
+        pageSize:
+          type: integer
 
-    Address:
+    PaginatedInvitedUserList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvitedUserDto'
+        totalCount:
+          type: integer
+        pageIndex:
+          type: integer
+        pageSize:
+          type: integer
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+
+    ShopSummaryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        subdomainSlug:
+          type: string
+
+    AddressDto:
       type: object
       properties:
         id:
@@ -160,8 +2408,281 @@ components:
         zipCode:
           type: string
 
-  responses:
-    Unauthorized:
-      description: Invalid credentials or access denied
-    NotFound:
-      description: Email or password is not correct
+    AddressRequest:
+      type: object
+      required: [fullName, street, city, zipCode]
+      properties:
+        label:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        zipCode:
+          type: string
+
+    AddToCartRequest:
+      type: object
+      required: [productId, size, quantity]
+      properties:
+        productId:
+          type: integer
+        size:
+          type: string
+          enum: [XS, S, M, L, XL, XXL, XXXL]
+        quantity:
+          type: integer
+
+    UpdateCartRequest:
+      type: object
+      required: [size, quantity]
+      properties:
+        size:
+          type: string
+          enum: [XS, S, M, L, XL, XXL, XXXL]
+        quantity:
+          type: integer
+
+    CreateOrderRequest:
+      type: object
+      required: [customerEmail, shippingAddress, items]
+      properties:
+        customerEmail:
+          type: string
+          format: email
+        shippingAddress:
+          $ref: '#/components/schemas/CheckoutAddressRequest'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+
+    CheckoutAddressRequest:
+      type: object
+      required: [firstName, lastName, phone, street, city, zipCode]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        zipCode:
+          type: string
+
+    OrderItemRequest:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+
+    CheckoutDto:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        status:
+          type: string
+        totalAmount:
+          type: number
+          format: decimal
+
+    ChangeUserPasswordRequest:
+      type: object
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+
+    InviteAdminRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    UpsertShopRequest:
+      type: object
+      required: [name, subdomainSlug]
+      properties:
+        name:
+          type: string
+        subdomainSlug:
+          type: string
+        description:
+          type: string
+        logoFileName:
+          type: string
+        bannerFileName:
+          type: string
+
+    UpdateShopActiveStatusRequest:
+      type: object
+      required: [isActive]
+      properties:
+        isActive:
+          type: boolean
+
+    ShopMemberInviteRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    UpdateShopMemberRequest:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    FileS3UploadUrlRequest:
+      type: object
+      required: [files]
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileMeta'
+
+    FileMeta:
+      type: object
+      required: [fileName, contentType]
+      properties:
+        fileName:
+          type: string
+        contentType:
+          type: string
+
+    FileUploadUrl:
+      type: object
+      properties:
+        fileName:
+          type: string
+        uploadUrl:
+          type: string
+
+    NewsletterRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    UnsubscribeConfirmationRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    AdminDashboardSummaryDto:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+          format: decimal
+        totalOrdersCount:
+          type: integer
+        totalProductsCount:
+          type: integer
+        totalActiveShopsCount:
+          type: integer
+        userCountsByRole:
+          type: object
+          properties:
+            admin:
+              type: integer
+            owner:
+              type: integer
+            manager:
+              type: integer
+            customer:
+              type: integer
+        pendingInvitationsCount:
+          type: integer
+        lowStockProductsCount:
+          type: integer
+        recentOrders:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              status:
+                type: string
+              totalAmount:
+                type: number
+                format: decimal
+              createdAt:
+                type: string
+                format: date-time
+
+    ShopDashboardSummaryDto:
+      type: object
+      properties:
+        totalSales:
+          type: number
+          format: decimal
+        totalOrdersCount:
+          type: integer
+        totalProductsCount:
+          type: integer
+        recentOrders:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              status:
+                type: string
+              totalAmount:
+                type: number
+                format: decimal
+              createdAt:
+                type: string
+                format: date-time
+        lowStockProductsCount:
+          type: integer
+        topSellingProducts:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              name:
+                type: string
+              totalQuantitySold:
+                type: integer

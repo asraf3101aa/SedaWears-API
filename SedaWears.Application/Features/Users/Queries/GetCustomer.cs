@@ -5,16 +5,10 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Users.Queries;
 
-public record GetCustomerQuery(int Id) : IRequest<CustomerDto>;
+public record GetCustomerQuery(int Id) : IRequest<UserDto>;
 
-public class GetCustomerHandler(IUserService userService) :
-    IRequestHandler<GetCustomerQuery, CustomerDto>
+public class GetCustomerHandler(IUserService userService) : IRequestHandler<GetCustomerQuery, UserDto>
 {
-    public async Task<CustomerDto> Handle(GetCustomerQuery request, CancellationToken ct)
-    {
-        return await userService.GetUserByIdAndRoleAsync<CustomerDto>(
-            request.Id,
-            UserRole.Customer,
-            ct);
-    }
+    public async Task<UserDto> Handle(GetCustomerQuery request, CancellationToken ct)
+        => await userService.GetUserByIdAndRoleAsync(request.Id, UserRole.Customer, ct);
 }

@@ -1,0 +1,107 @@
+services:
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-asraf}/sedawears-api:${VERSION:-latest}
+    environment:
+      AllowedHosts: ${ALLOWED_HOSTS}
+      S3__Region: ${STORAGE_REGION}
+      S3__AccessKey: ${STORAGE_ACCESS_KEY_ID}
+      S3__SecretKey: ${STORAGE_SECRET_ACCESS_KEY}
+      S3__BucketName: ${STORAGE_BUCKET_NAME}
+      S3__Endpoint: ${STORAGE_ENDPOINT}
+      ASPNETCORE_ENVIRONMENT: Staging
+      ConnectionStrings__Postgres: Host=postgres;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD}
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Resend__ApiKey: ${RESEND_API_KEY}
+      App__CustomerFrontendUrl: ${CUSTOMER_FRONTEND_URL}
+      App__AdminFrontendUrl: ${ADMIN_FRONTEND_URL}
+      App__ManagerFrontendUrl: ${MANAGER_FRONTEND_URL}
+      App__OwnerFrontendUrl: ${OWNER_FRONTEND_URL}
+      App__Cors__AllowedOrigins: ${CORS_ORIGINS}
+      Email__FromName: SedaWears
+      Email__NoReplyEmail: ${NOREPLY_EMAIL}
+      Email__ContactEmail: ${CONTACT_EMAIL}
+      Google__ClientId: ${GOOGLE_CLIENT_ID}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET}
+    volumes:
+      - /var/www/sedawears-staging/aspnet-keys:/home/app/.aspnet/DataProtection-Keys
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "/healthchecks/Distroless.HealthChecks", "--uri", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    stop_grace_period: 30s
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:7-alpine
+    command: ["sh", "-c", "exec redis-server --requirepass \"${REDIS_PASSWORD}\""]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  openinary:
+    image: openinary/openinary-api:${OPENINARY_VERSION:-latest}
+    ports:
+      - "3000:3000"
+    volumes:
+      - openinary-db:/app/data
+    environment:
+      NODE_ENV: production
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL}
+      STORAGE_REGION: ${STORAGE_REGION}
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY}
+      STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      API_SECRET: ${OPENINARY_API_SECRET}
+      MODE: api
+      DOCKER_CPU_LIMIT: ${DOCKER_CPU_LIMIT:-1.0}
+      DOCKER_MEMORY_LIMIT: ${DOCKER_MEMORY_LIMIT:-2G}
+      DOCKER_CPU_RESERVATION: ${DOCKER_CPU_RESERVATION:-0.25}
+      DOCKER_MEMORY_RESERVATION: ${DOCKER_MEMORY_RESERVATION:-512M}
+
+    deploy:
+      resources:
+        limits:
+          cpus: '${DOCKER_CPU_LIMIT:-1.0}'
+          memory: '${DOCKER_MEMORY_LIMIT:-2G}'
+        reservations:
+          cpus: '${DOCKER_CPU_RESERVATION:-0.25}'
+          memory: '${DOCKER_MEMORY_RESERVATION:-512M}'
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  postgres_data:
+  openinary-db:

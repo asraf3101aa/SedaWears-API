@@ -9,12 +9,12 @@ using SedaWears.Domain.Entities;
 namespace SedaWears.Application.Features.Products.Commands;
 
 public record CreateProductCommand(
-    string Name,
+    string? Name,
     string? Description,
-    decimal Price,
-    Gender Gender,
-    int CategoryId,
-    List<string> ImageFileNames,
+    decimal? Price,
+    Gender? Gender,
+    int? CategoryId,
+    List<string>? ImageFileNames,
     int? ShopId = null) : IRequest;
 
 public class CreateProductValidator : AbstractValidator<CreateProductCommand>
@@ -31,12 +31,15 @@ public class CreateProductValidator : AbstractValidator<CreateProductCommand>
             .When(x => !string.IsNullOrEmpty(x.Description));
 
         RuleFor(x => x.Price)
+            .NotEmpty().WithMessage("Price is required.")
             .GreaterThan(0).WithMessage("Product price must be greater than zero.");
 
         RuleFor(x => x.CategoryId)
+            .NotEmpty().WithMessage("Category is required.")
             .GreaterThan(0).WithMessage("A valid category identifier is required.");
 
         RuleFor(x => x.Gender)
+            .NotEmpty().WithMessage("Gender is required.")
             .IsInEnum().WithMessage("A valid gender must be specified.");
 
         RuleFor(x => x.ImageFileNames)
@@ -51,7 +54,7 @@ public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHan
         if (request.ShopId.HasValue)
         {
             var categoryExists = await dbContext.Categories
-                .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId, ct);
+                .AnyAsync(c => c.Id == request.CategoryId!.Value && c.ShopId == request.ShopId, ct);
 
             if (!categoryExists)
             {
@@ -61,12 +64,12 @@ public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHan
 
         var product = new Product
         {
-            Name = request.Name,
+            Name = request.Name!,
             Description = request.Description,
-            Price = request.Price,
-            CategoryId = request.CategoryId,
-            Gender = request.Gender,
-            Images = request.ImageFileNames.Select((fileName, index) => new ProductImage
+            Price = request.Price!.Value,
+            CategoryId = request.CategoryId!.Value,
+            Gender = request.Gender!.Value,
+            Images = request.ImageFileNames!.Select((fileName, index) => new ProductImage
             {
                 FileName = fileName,
                 Order = index

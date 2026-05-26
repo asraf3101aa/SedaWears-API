@@ -17,7 +17,11 @@ public class Product : BaseEntity
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public int? DiscountId { get; set; }
+    public Discount? Discount { get; set; }
+
     // Relationships
     public ICollection<ProductImage> Images { get; set; } = [];
     public ICollection<ProductSizeStock> SizeStocks { get; set; } = [];
 }
+

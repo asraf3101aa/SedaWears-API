@@ -14,7 +14,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
 
         builder.Property(t => t.Description)
-            .HasMaxLength(300);
+            .HasMaxLength(1000);
 
         // 1. Unique index for shop-specific categories
         builder.HasIndex(t => new { t.ShopId, t.Name })

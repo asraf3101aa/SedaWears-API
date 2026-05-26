@@ -3,13 +3,14 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Domain.Entities;
+using SedaWears.Domain.Enums;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Settings;
 using System.Web;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record ForgotPasswordCommand(string Email) : IRequest;
+public record ForgotPasswordCommand(string? Email) : IRequest;
 
 public class ForgotPasswordValidator : AbstractValidator<ForgotPasswordCommand>
 {
@@ -30,13 +31,20 @@ public class ForgotPasswordHandler(
     public async Task Handle(ForgotPasswordCommand request, CancellationToken ct)
     {
         var role = originContext.CurrentRole;
-        var user = await userManager.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email && u.Role == role && u.IsActive, ct);
+        var usersInRole = await userManager.GetUsersInRoleAsync(role.ToString());
+        var user = usersInRole.FirstOrDefault(u => u.Email == request.Email);
 
         if (user == null) return;
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        var url = $"{appConfig.FrontendUrl}/reset-password?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
+        var frontendUrl = role switch
+        {
+            UserRole.Admin => appConfig.AdminFrontendUrl,
+            UserRole.Manager => appConfig.ManagerFrontendUrl,
+            UserRole.Owner => appConfig.OwnerFrontendUrl,
+            _ => appConfig.CustomerFrontendUrl
+        };
+        var url = $"{frontendUrl}/reset-password?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
 
         await emailService.SendEmailAsync(
             user.Email!,

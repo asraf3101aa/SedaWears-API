@@ -1,17 +1,25 @@
 using MediatR;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Exceptions;
+using SedaWears.Domain.Entities;
 using SedaWears.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
 public record UpdateCategoryActiveStatusCommand(int Id, bool IsActive, int? ShopId = null) : IRequest;
 
-public class UpdateCategoryActiveStatusHandler(IApplicationDbContext dbContext, ICurrentUser currentUser) : IRequestHandler<UpdateCategoryActiveStatusCommand>
+public class UpdateCategoryActiveStatusHandler(
+    IApplicationDbContext dbContext,
+    ICurrentUser currentUser,
+    UserManager<User> userManager) : IRequestHandler<UpdateCategoryActiveStatusCommand>
 {
     public async Task Handle(UpdateCategoryActiveStatusCommand request, CancellationToken ct)
     {
+        var user = currentUser.Id.HasValue ? await userManager.FindByIdAsync(currentUser.Id.Value.ToString()) : null;
+        var isAdmin = user != null && await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));
+
         if (request.ShopId.HasValue)
         {
             var shopExists = await dbContext.Shops
@@ -20,16 +28,16 @@ public class UpdateCategoryActiveStatusHandler(IApplicationDbContext dbContext, 
             if (!shopExists)
                 throw new NotFoundException("Shop not found.");
 
-            if (currentUser.Role != UserRole.Admin)
+            if (!isAdmin)
             {
-                var isMember = await dbContext.ShopMembers
-                    .AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
+                var isMember = await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId.Value, ct)
+                               || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
 
                 if (!isMember)
                     throw new NotFoundException("Shop not found.");
             }
         }
-        else if (currentUser.Role != UserRole.Admin)
+        else if (!isAdmin)
         {
             throw new ForbiddenException("Only administrators can update global categories.");
         }

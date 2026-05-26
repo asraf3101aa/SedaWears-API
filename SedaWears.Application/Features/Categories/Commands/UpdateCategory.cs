@@ -1,6 +1,7 @@
 using MediatR;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Entities;
@@ -26,10 +27,16 @@ public class UpdateCategoryValidator : AbstractValidator<UpdateCategoryCommand>
     }
 }
 
-public class UpdateCategoryHandler(IApplicationDbContext dbContext, ICurrentUser currentUser) : IRequestHandler<UpdateCategoryCommand>
+public class UpdateCategoryHandler(
+    IApplicationDbContext dbContext,
+    ICurrentUser currentUser,
+    UserManager<User> userManager) : IRequestHandler<UpdateCategoryCommand>
 {
     public async Task Handle(UpdateCategoryCommand request, CancellationToken ct)
     {
+        var user = currentUser.Id.HasValue ? await userManager.FindByIdAsync(currentUser.Id.Value.ToString()) : null;
+        var isAdmin = user != null && await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));
+
         if (request.ShopId.HasValue)
         {
             var shopExists = await dbContext.Shops
@@ -38,16 +45,16 @@ public class UpdateCategoryHandler(IApplicationDbContext dbContext, ICurrentUser
             if (!shopExists)
                 throw new NotFoundException("Shop not found.");
 
-            if (currentUser.Role != UserRole.Admin)
+            if (!isAdmin)
             {
-                var isMember = await dbContext.ShopMembers
-                    .AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
+                var isMember = await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId.Value, ct)
+                               || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
 
                 if (!isMember)
                     throw new NotFoundException("Shop not found.");
             }
         }
-        else if (currentUser.Role != UserRole.Admin)
+        else if (!isAdmin)
         {
             throw new ForbiddenException("Only administrators can update global categories.");
         }

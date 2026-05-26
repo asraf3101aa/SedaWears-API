@@ -14,6 +14,7 @@ public class Shop : BaseEntity
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Relationships
-    public ICollection<ShopMember> Members { get; set; } = [];
+    public ICollection<ShopOwner> Owners { get; set; } = [];
+    public ICollection<ShopManager> Managers { get; set; } = [];
     public ICollection<Product> Products { get; set; } = [];
 }

@@ -1,160 +1,107 @@
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Models;
 using SedaWears.Application.Features.Users.Models;
+using SedaWears.Application.Features.Users.Projections;
+using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using SedaWears.Application.Features.Users.Projections;
 using Microsoft.AspNetCore.Identity;
 using SedaWears.Domain.Entities;
-using SedaWears.Application.Common.Settings;
-using System.Web;
-using SedaWears.Application.Common.Exceptions;
 
 namespace SedaWears.Application.Common.Services;
 
 public class UserService(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
-    UserManager<User> userManager,
-    IEmailService emailService,
-    AppConfig appConfig) : IUserService
+    UserManager<User> userManager) : IUserService
 {
-    public async Task<PaginatedList<T>> GetUsersByRoleAsync<T>(
+    public async Task<PaginatedList<UserDto>> GetUsersByRoleAsync(
         UserRole role,
         int pageNumber,
         int pageSize,
-        bool? isInvited = null,
-        string? sortBy = null,
-        string? sortOrder = "desc",
-        CancellationToken ct = default) where T : BaseUserDto
+        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        SortOrder sortOrder = SortOrder.Desc,
+        CancellationToken ct = default)
     {
-        var query = dbContext.Users
-            .Where(u => u.Role == role && u.Id != currentUser.Id);
+        var usersInRole = await userManager.GetUsersInRoleAsync(role.ToString());
+        var userIds = usersInRole.Select(u => u.Id).ToList();
 
-        if (isInvited.HasValue)
-            query = query.Where(u => u.EmailConfirmed == !isInvited.Value);
+        var query = userManager.Users
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id) && u.Id != currentUser.Id);
 
-        if (role == UserRole.Customer)
-            query = query.Include(u => u.Addresses);
-
-        if (role == UserRole.Manager || role == UserRole.Owner)
-            query = query.Include(u => u.ShopMemberships).ThenInclude(sm => sm.Shop);
-
-        query = query.AsNoTracking();
-
-        if (!string.IsNullOrEmpty(sortBy))
+        var desc = sortOrder == SortOrder.Desc;
+        query = sortBy switch
         {
-            var isDescending = sortOrder?.ToLower() == "desc";
-            query = sortBy.ToLower() switch
-            {
-                "name" => isDescending ? query.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName) : query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
-                "email" => isDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
-                "isactive" => isDescending ? query.OrderByDescending(u => u.IsActive) : query.OrderBy(u => u.IsActive),
-                "createdat" => isDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
-                _ => query.OrderByDescending(u => u.CreatedAt)
-            };
-        }
-        else
-        {
-            query = query.OrderByDescending(u => u.CreatedAt);
-        }
-
-        var totalCount = await query.CountAsync(ct);
-        
-        var projectedQuery = role switch
-        {
-            UserRole.Admin => query.ProjectToAdmin().Cast<T>(),
-            UserRole.Owner => query.ProjectToOwner().Cast<T>(),
-            UserRole.Manager => query.ProjectToManager().Cast<T>(),
-            UserRole.Customer => query.ProjectToCustomer().Cast<T>(),
-            _ => throw new ArgumentException("Invalid role")
+            UsersSortBy.Name => desc
+                ? query.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName)
+                : query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
+            UsersSortBy.Email => desc
+                ? query.OrderByDescending(u => u.Email)
+                : query.OrderBy(u => u.Email),
+            _ => desc
+                ? query.OrderByDescending(u => u.CreatedAt)
+                : query.OrderBy(u => u.CreatedAt)
         };
 
-        var mappedItems = await projectedQuery
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .ProjectToUser()
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
 
-        return new PaginatedList<T>(mappedItems, totalCount, pageNumber, pageSize);
+        return new PaginatedList<UserDto>(items, total, pageNumber, pageSize);
     }
 
-    public async Task<PaginatedList<ManagerDto>> GetShopManagersAsync(
+    public async Task<PaginatedList<UserDto>> GetShopManagersAsync(
         int shopId,
         int pageNumber,
         int pageSize,
-        bool? isInvited = null,
-        string? sortBy = null,
-        string? sortOrder = "desc",
+        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        SortOrder sortOrder = SortOrder.Desc,
         CancellationToken ct = default)
     {
-        var query = dbContext.ShopMembers
+        var query = dbContext.ShopManagers
             .AsNoTracking()
-            .Where(sm => sm.ShopId == shopId && sm.UserId != currentUser.Id && sm.User.Role == UserRole.Manager)
-            .Include(sm => sm.User)
-            .ThenInclude(u => u.ShopMemberships)
-            .ThenInclude(sm => sm.Shop)
-            .AsQueryable();
+            .Where(sm => sm.ShopId == shopId && sm.UserId != currentUser.Id);
 
-        if (isInvited.HasValue)
-            query = query.Where(sm => sm.User.EmailConfirmed == !isInvited.Value);
-
-        if (!string.IsNullOrEmpty(sortBy))
+        var desc = sortOrder == SortOrder.Desc;
+        query = sortBy switch
         {
-            var isDescending = sortOrder?.ToLower() == "desc";
-            query = sortBy.ToLower() switch
-            {
-                "name" => isDescending ? query.OrderByDescending(sm => sm.User.FirstName).ThenByDescending(sm => sm.User.LastName) : query.OrderBy(sm => sm.User.FirstName).ThenBy(sm => sm.User.LastName),
-                "email" => isDescending ? query.OrderByDescending(sm => sm.User.Email) : query.OrderBy(sm => sm.User.Email),
-                "isactive" => isDescending ? query.OrderByDescending(sm => sm.User.IsActive) : query.OrderBy(sm => sm.User.IsActive),
-                "createdat" => isDescending ? query.OrderByDescending(sm => sm.User.CreatedAt) : query.OrderBy(sm => sm.User.CreatedAt),
-                _ => query.OrderByDescending(sm => sm.User.CreatedAt)
-            };
-        }
-        else
-        {
-            query = query.OrderByDescending(sm => sm.User.CreatedAt);
-        }
+            UsersSortBy.Name => desc
+                ? query.OrderByDescending(sm => sm.User.FirstName).ThenByDescending(sm => sm.User.LastName)
+                : query.OrderBy(sm => sm.User.FirstName).ThenBy(sm => sm.User.LastName),
+            UsersSortBy.Email => desc
+                ? query.OrderByDescending(sm => sm.User.Email)
+                : query.OrderBy(sm => sm.User.Email),
+            _ => desc
+                ? query.OrderByDescending(sm => sm.User.CreatedAt)
+                : query.OrderBy(sm => sm.User.CreatedAt)
+        };
 
-        var totalCount = await query.CountAsync(ct);
-        var mappedList = await query
+        var total = await query.CountAsync(ct);
+        var items = await query
             .Select(sm => sm.User)
-            .ProjectToManager()
+            .ProjectToUser()
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
 
-        return new PaginatedList<ManagerDto>(mappedList, totalCount, pageNumber, pageSize);
+        return new PaginatedList<UserDto>(items, total, pageNumber, pageSize);
     }
 
-    public async Task<T> GetUserByIdAndRoleAsync<T>(int userId, UserRole role, CancellationToken ct = default) where T : BaseUserDto
+    public async Task<UserDto> GetUserByIdAndRoleAsync(int userId, UserRole role, CancellationToken ct = default)
     {
-        var query = dbContext.Users
+        var usersInRole = await userManager.GetUsersInRoleAsync(role.ToString());
+        if (!usersInRole.Any(u => u.Id == userId))
+            throw new NotFoundException("User not found.");
+
+        return await userManager.Users
             .AsNoTracking()
-            .Where(u => u.Id == userId && u.Role == role);
-
-        var projectedQuery = role switch
-        {
-            UserRole.Admin => query.ProjectToAdmin().Cast<T>(),
-            UserRole.Owner => query.ProjectToOwner().Cast<T>(),
-            UserRole.Manager => query.ProjectToManager().Cast<T>(),
-            UserRole.Customer => query.ProjectToCustomer().Cast<T>(),
-            _ => throw new ArgumentException("Invalid role")
-        };
-
-        return await projectedQuery.FirstOrDefaultAsync(ct) ?? throw new NotFoundException("User not found.");
-    }
-
-    public async Task SendInvitationEmailAsync(User user)
-    {
-        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-        var url = $"{appConfig.FrontendUrl}/accept-invitation?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
-
-        var roleDisplayName = user.Role.ToString();
-
-        var subject = $"SedaWears {roleDisplayName} Invitation";
-        var body = $"<p>You have been invited as a <b>{roleDisplayName}</b> to the SedaWears platform.</p>" +
-                   $"<p>Click <a href='{url}'>here</a> to accept the invitation and set up your account password.</p>";
-
-        await emailService.SendEmailAsync(user.Email!, subject, body);
+            .Where(u => u.Id == userId)
+            .ProjectToUser()
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException("User not found.");
     }
 }

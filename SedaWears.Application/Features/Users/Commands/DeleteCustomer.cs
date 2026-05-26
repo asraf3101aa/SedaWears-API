@@ -2,7 +2,6 @@ using MediatR;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using SedaWears.Application.Common.Exceptions;
-using SedaWears.Application.Common.Interfaces;
 using SedaWears.Domain.Entities;
 using SedaWears.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -21,14 +20,15 @@ public class DeleteCustomerValidator : AbstractValidator<DeleteCustomerCommand>
 }
 
 public class DeleteCustomerHandler(
-    UserManager<User> userManager, 
-    IApplicationDbContext dbContext) : IRequestHandler<DeleteCustomerCommand>
+    UserManager<User> userManager) : IRequestHandler<DeleteCustomerCommand>
 {
     public async Task Handle(DeleteCustomerCommand request, CancellationToken ct)
     {
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == request.Id && u.Role == UserRole.Customer, ct)
-            ?? throw new NotFoundException("Customer not found.");
+        var user = await userManager.FindByIdAsync(request.Id.ToString())
+            ?? throw new NotFoundException("User not found.");
+
+        if (!await userManager.IsInRoleAsync(user, UserRole.Customer.ToString()))
+            throw new NotFoundException("Customer not found.");
 
         var result = await userManager.DeleteAsync(user);
         if (!result.Succeeded) throw new BadRequestException(result.Errors.First().Description);

@@ -1,3 +1,3 @@
 namespace SedaWears.Application.Features.Invitations.Models;
 
-public record InvitationDetailsResponse(string Email, string Role);
+public record InvitationDetailsResponse(bool IsValid, bool UserExists);

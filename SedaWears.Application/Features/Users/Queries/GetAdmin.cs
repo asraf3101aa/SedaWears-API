@@ -5,16 +5,10 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Users.Queries;
 
-public record GetAdminQuery(int Id) : IRequest<AdminDto>;
+public record GetAdminQuery(int Id) : IRequest<UserDto>;
 
-public class GetAdminHandler(IUserService userService) :
-    IRequestHandler<GetAdminQuery, AdminDto>
+public class GetAdminHandler(IUserService userService) : IRequestHandler<GetAdminQuery, UserDto>
 {
-    public async Task<AdminDto> Handle(GetAdminQuery request, CancellationToken ct)
-    {
-        return await userService.GetUserByIdAndRoleAsync<AdminDto>(
-            request.Id, 
-            UserRole.Admin, 
-            ct);
-    }
+    public async Task<UserDto> Handle(GetAdminQuery request, CancellationToken ct)
+        => await userService.GetUserByIdAndRoleAsync(request.Id, UserRole.Admin, ct);
 }

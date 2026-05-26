@@ -8,17 +8,24 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record RegisterCommand(string Email, string Password, string FirstName, string LastName, string Phone) : IRequest;
+public record RegisterCommand(string? Email, string? Password, string? FirstName, string? LastName, string? Phone) : IRequest;
 
 public class RegisterValidator : AbstractValidator<RegisterCommand>
 {
-    public RegisterValidator()
+    public RegisterValidator(UserManager<User> userManager)
     {
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email address is required.")
-            .EmailAddress().WithMessage("Please enter a valid email address.");
+            .EmailAddress().WithMessage("Please enter a valid email address.")
+            .MustAsync(async (email, ct) =>
+            {
+                if (string.IsNullOrEmpty(email)) return true;
+                var user = await userManager.FindByEmailAsync(email);
+                if (user == null) return true;
+                return !await userManager.IsInRoleAsync(user, nameof(UserRole.Customer));
+            }).WithMessage("Email address already registered.");
 
-        RuleFor(x => x.Password)
+        RuleFor(x => x.Password!)
             .Password();
 
         RuleFor(x => x.FirstName)
@@ -40,13 +47,14 @@ public class RegisterHandler(
         var user = new User
         {
             Email = request.Email,
-            UserName = Guid.NewGuid().ToString(),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            PhoneNumber = request.Phone,
-            Role = UserRole.Customer
+            UserName = request.Email,
+            FirstName = request.FirstName!,
+            LastName = request.LastName!,
+            PhoneNumber = request.Phone
         };
-        var result = await userManager.CreateAsync(user, request.Password);
+        var result = await userManager.CreateAsync(user, request.Password!);
         if (!result.Succeeded) throw new BadRequestException(result.Errors.First().Description);
+
+        await userManager.AddToRoleAsync(user, nameof(UserRole.Customer));
     }
 }

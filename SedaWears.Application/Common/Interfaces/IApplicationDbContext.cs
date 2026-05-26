@@ -19,8 +19,17 @@ public interface IApplicationDbContext
     DbSet<ProductSizeStock> ProductSizeStocks { get; }
     DbSet<CartItem> CartItems { get; }
     DbSet<Shop> Shops { get; }
-    DbSet<ShopMember> ShopMembers { get; }
+    DbSet<ShopOwner> ShopOwners { get; }
+    DbSet<ShopManager> ShopManagers { get; }
+    DbSet<InvitedAdmin> InvitedAdmins { get; }
+    DbSet<InvitedShopOwner> InvitedShopOwners { get; }
+    DbSet<InvitedShopManager> InvitedShopManagers { get; }
     DbSet<WishlistItem> WishlistItems { get; }
+    DbSet<Discount> Discounts { get; }
+    DbSet<Guest> Guests { get; }
+    DbSet<PromoCode> PromoCodes { get; }
+
     DatabaseFacade Database { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+
 }

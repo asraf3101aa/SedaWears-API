@@ -25,7 +25,7 @@ public class GetMyShopsHandler(IApplicationDbContext dbContext, ICurrentUser cur
 
         var query = dbContext.Shops
             .AsNoTracking()
-            .Where(s => s.Members.Any(m => m.UserId == currentUserId && m.IsActive && m.IsInvitationAccepted));
+            .Where(s => s.Owners.Any(o => o.UserId == currentUserId) || s.Managers.Any(m => m.UserId == currentUserId));
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

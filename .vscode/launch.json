@@ -2,13 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch SedaWears.API",
+      "name": "Launch SedaWears.Presentation",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/SedaWears.API/bin/Debug/net10.0/SedaWears.API.dll",
+      "program": "${workspaceFolder}/SedaWears.Presentation/bin/Debug/net10.0/SedaWears.Presentation.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/SedaWears.API",
+      "cwd": "${workspaceFolder}/SedaWears.Presentation",
       "stopAtEntry": false,
       "console": "internalConsole",
       "env": {

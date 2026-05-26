@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Identity;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Entities;
 using SedaWears.Domain.Enums;
-using SedaWears.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace SedaWears.Application.Features.Users.Commands;
@@ -20,17 +19,25 @@ public class DeleteAdminValidator : AbstractValidator<DeleteAdminCommand>
 }
 
 public class DeleteAdminHandler(
-    UserManager<User> userManager,
-    IApplicationDbContext dbContext) : IRequestHandler<DeleteAdminCommand>
+    UserManager<User> userManager) : IRequestHandler<DeleteAdminCommand>
 {
     public async Task Handle(DeleteAdminCommand request, CancellationToken ct)
     {
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == request.Id && u.Role == UserRole.Admin, ct)
+        var user = await userManager.FindByIdAsync(request.Id.ToString())
             ?? throw new NotFoundException("User not found.");
 
-        var result = await userManager.DeleteAsync(user);
+        if (!await userManager.IsInRoleAsync(user, UserRole.Admin.ToString()))
+            throw new NotFoundException("Admin not found.");
+
+        var result = await userManager.RemoveFromRoleAsync(user, UserRole.Admin.ToString());
         if (!result.Succeeded) throw new BadRequestException(result.Errors.First().Description);
+
+        var roles = await userManager.GetRolesAsync(user);
+        if (roles.Count == 0)
+        {
+            var deleteResult = await userManager.DeleteAsync(user);
+            if (!deleteResult.Succeeded) throw new BadRequestException(deleteResult.Errors.First().Description);
+        }
 
     }
 }

@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/SedaWears.API/SedaWears.API.csproj",
+        "${workspaceFolder}/SedaWears.Presentation/SedaWears.Presentation.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -23,7 +23,7 @@
       "type": "process",
       "args": [
         "publish",
-        "${workspaceFolder}/SedaWears.API/SedaWears.API.csproj",
+        "${workspaceFolder}/SedaWears.Presentation/SedaWears.Presentation.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],
@@ -37,7 +37,7 @@
         "watch",
         "run",
         "--project",
-        "${workspaceFolder}/SedaWears.API/SedaWears.API.csproj"
+        "${workspaceFolder}/SedaWears.Presentation/SedaWears.Presentation.csproj"
       ],
       "problemMatcher": "$msCompile"
     }

@@ -9,13 +9,13 @@ using SedaWears.Domain.Entities;
 namespace SedaWears.Application.Features.Products.Commands;
 
 public record UpdateProductCommand(
-    int Id,
-    string Name,
+    int? Id,
+    string? Name,
     string? Description,
-    decimal Price,
-    Gender Gender,
-    int CategoryId,
-    List<string> ImageFileNames,
+    decimal? Price,
+    Gender? Gender,
+    int? CategoryId,
+    List<string>? ImageFileNames,
     int? ShopId = null) : IRequest;
 
 public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
@@ -23,6 +23,7 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
     public UpdateProductValidator()
     {
         RuleFor(x => x.Id)
+            .NotEmpty().WithMessage("A valid product identifier is required.")
             .GreaterThan(0).WithMessage("A valid product identifier is required.");
 
         RuleFor(x => x.Name)
@@ -35,12 +36,15 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
             .When(x => !string.IsNullOrEmpty(x.Description));
 
         RuleFor(x => x.Price)
+            .NotEmpty().WithMessage("Price is required.")
             .GreaterThan(0).WithMessage("Product price must be greater than zero.");
 
         RuleFor(x => x.CategoryId)
+            .NotEmpty().WithMessage("Category is required.")
             .GreaterThan(0).WithMessage("A valid category identifier is required.");
 
         RuleFor(x => x.Gender)
+            .NotEmpty().WithMessage("Gender is required.")
             .IsInEnum().WithMessage("A valid gender must be specified.");
 
     }
@@ -53,7 +57,7 @@ public class UpdateProductHandler(IApplicationDbContext dbContext) : IRequestHan
         var product = await dbContext.Products
             .Include(p => p.Images)
             .Include(p => p.Category)
-            .FirstOrDefaultAsync(p => p.Id == request.Id, ct) ?? throw new NotFoundException("Product not found");
+            .FirstOrDefaultAsync(p => p.Id == request.Id!.Value, ct) ?? throw new NotFoundException("Product not found");
 
         if (request.ShopId.HasValue)
         {
@@ -63,7 +67,7 @@ public class UpdateProductHandler(IApplicationDbContext dbContext) : IRequestHan
             }
 
             var categoryExists = await dbContext.Categories
-                .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId, ct);
+                .AnyAsync(c => c.Id == request.CategoryId!.Value && c.ShopId == request.ShopId, ct);
 
             if (!categoryExists)
             {
@@ -71,16 +75,16 @@ public class UpdateProductHandler(IApplicationDbContext dbContext) : IRequestHan
             }
         }
 
-        product.Name = request.Name;
+        product.Name = request.Name!;
         product.Description = request.Description;
-        product.Price = request.Price;
-        product.CategoryId = request.CategoryId;
-        product.Gender = request.Gender;
+        product.Price = request.Price!.Value;
+        product.CategoryId = request.CategoryId!.Value;
+        product.Gender = request.Gender!.Value;
 
         if (request.ImageFileNames is { Count: > 0 })
         {
             product.Images.Clear();
-            foreach (var (fileName, index) in request.ImageFileNames.Select((v, i) => (v, i)))
+            foreach (var (fileName, index) in request.ImageFileNames!.Select((v, i) => (v, i)))
             {
                 product.Images.Add(new ProductImage { FileName = fileName, Order = index });
             }

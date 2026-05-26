@@ -12,7 +12,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(p => p.Name).IsRequired().HasMaxLength(100);
         builder.Property(p => p.Price).HasPrecision(18, 2);
-        builder.Property(p => p.Description).HasMaxLength(1000);
+        builder.Property(p => p.Description).HasMaxLength(5000);
         builder.Property(p => p.Gender).HasConversion<string>().HasMaxLength(32);
 
         builder.HasOne(p => p.Category)
@@ -20,9 +20,16 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(p => p.Discount)
+            .WithMany(d => d.Products)
+            .HasForeignKey(p => p.DiscountId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(p => p.Name);
         builder.HasIndex(p => p.Price);
         builder.HasIndex(p => p.Gender);
         builder.HasIndex(p => p.CategoryId);
+        builder.HasIndex(p => p.DiscountId);
+
     }
 }

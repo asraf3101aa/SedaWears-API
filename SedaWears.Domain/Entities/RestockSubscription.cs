@@ -1,11 +1,12 @@
 using SedaWears.Domain.Common;
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Domain.Entities;
 
 public class RestockSubscription : BaseEntity
 {
     public string Email { get; set; } = string.Empty;
-    public string Size { get; set; } = string.Empty;
+    public ProductSize Size { get; set; }
     public DateTime SubscribedAt { get; set; } = DateTime.UtcNow;
     public bool Notified { get; set; }
     public DateTime? NotifiedAt { get; set; }

@@ -1,43 +1,41 @@
-using SedaWears.Application.Features.Users.Projections;
-using SedaWears.Application.Features.Users.Models;
+using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Exceptions;
-using SedaWears.Domain.Entities;
 using SedaWears.Application.Common.Interfaces;
 
 namespace SedaWears.Application.Features.Profile.Commands;
 
-public record UpdateManagerProfileCommand(string FirstName, string LastName, string Phone, string? AvatarFileName) : IRequest<ManagerDto>;
+public record UpdateManagerProfileCommand(string? FirstName, string? LastName, string? Phone) : IRequest;
 
-public class UpdateManagerProfileCommandHandler(UserManager<User> userManager, IS3Service s3Service, ICurrentUser currentUser) :
-    IRequestHandler<UpdateManagerProfileCommand, ManagerDto>
+public class UpdateManagerProfileCommandValidator : AbstractValidator<UpdateManagerProfileCommand>
 {
-    public async Task<ManagerDto> Handle(UpdateManagerProfileCommand request, CancellationToken cancellationToken)
+    public UpdateManagerProfileCommandValidator()
     {
-        var userId = currentUser.Id;
-        var user = await userManager.Users
-            .Include(u => u.ShopMemberships)
-            .ThenInclude(ms => ms.Shop)
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
-            ?? throw new NotFoundException("Profile not found.");
+        RuleFor(v => v.FirstName).NotEmpty().WithMessage("First name is required.").MaximumLength(50).WithMessage("First name must not exceed 50 characters.");
+        RuleFor(v => v.LastName).NotEmpty().WithMessage("Last name is required.").MaximumLength(50).WithMessage("Last name must not exceed 50 characters.");
+        RuleFor(v => v.Phone).NotEmpty().WithMessage("Phone number is required.").Matches(@"^\+?[0-9]{7,15}$").WithMessage("A valid phone number is required.");
+    }
+}
 
-        user.FirstName = request.FirstName;
-        user.LastName = request.LastName;
-        user.PhoneNumber = request.Phone;
+public class UpdateManagerProfileCommandHandler(IApplicationDbContext dbContext, ICurrentUser currentUser) :
+    IRequestHandler<UpdateManagerProfileCommand>
+{
+    public async Task Handle(UpdateManagerProfileCommand request, CancellationToken cancellationToken)
+    {
+        var userId = currentUser.Id!.Value;
 
-        if (!string.IsNullOrEmpty(request.AvatarFileName) && request.AvatarFileName != user.AvatarFileName)
+        var rowsAffected = await dbContext.Users
+            .Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(u => u.FirstName, request.FirstName)
+                .SetProperty(u => u.LastName, request.LastName)
+                .SetProperty(u => u.PhoneNumber, request.Phone), 
+                cancellationToken);
+
+        if (rowsAffected == 0)
         {
-            if (!string.IsNullOrEmpty(user.AvatarFileName))
-            {
-                await s3Service.DeleteFileAsync(user.AvatarFileName);
-            }
-            user.AvatarFileName = request.AvatarFileName;
+            throw new NotFoundException("User not found.");
         }
-
-        await userManager.UpdateAsync(user);
-
-        return (ManagerDto)user.ToUserDto();
     }
 }

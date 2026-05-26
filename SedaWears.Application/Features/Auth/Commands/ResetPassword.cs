@@ -9,7 +9,7 @@ using SedaWears.Domain.Entities;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record ResetPasswordCommand(string Email, string Token, string NewPassword) : IRequest;
+public record ResetPasswordCommand(string? Email, string? Token, string? NewPassword) : IRequest;
 
 public class ResetPasswordValidator : AbstractValidator<ResetPasswordCommand>
 {
@@ -22,7 +22,7 @@ public class ResetPasswordValidator : AbstractValidator<ResetPasswordCommand>
         RuleFor(x => x.Token)
             .NotEmpty().WithMessage("Token is required.");
 
-        RuleFor(x => x.NewPassword)
+        RuleFor(x => x.NewPassword!)
             .Password();
     }
 }
@@ -34,15 +34,9 @@ public class ResetPasswordHandler(
     public async Task Handle(ResetPasswordCommand request, CancellationToken ct)
     {
         var role = originContext.CurrentRole;
-        var user = await userManager.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email && u.Role == role && u.IsActive, ct);
-
-        if (user == null)
-        {
-            throw new BadRequestException("Invalid email or token.");
-        }
-
-        var result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        var usersInRole = await userManager.GetUsersInRoleAsync(role.ToString());
+        var user = usersInRole.FirstOrDefault(u => u.Email == request.Email) ?? throw new BadRequestException("Invalid email or token.");
+        var result = await userManager.ResetPasswordAsync(user, request.Token!, request.NewPassword!);
         if (!result.Succeeded)
         {
             throw new BadRequestException("Invalid email or token.");

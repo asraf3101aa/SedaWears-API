@@ -2,5 +2,5 @@
   <Project Path="SedaWears.Application/SedaWears.Application.csproj" />
   <Project Path="SedaWears.Domain/SedaWears.Domain.csproj" />
   <Project Path="SedaWears.Infrastructure/SedaWears.Infrastructure.csproj" />
-  <Project Path="SedaWears.API/SedaWears.API.csproj" />
+  <Project Path="SedaWears.Presentation/SedaWears.Presentation.csproj" />
 </Solution>

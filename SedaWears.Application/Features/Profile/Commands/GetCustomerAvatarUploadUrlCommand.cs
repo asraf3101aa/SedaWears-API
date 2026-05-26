@@ -5,9 +5,21 @@ using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Domain.Entities;
 
+using FluentValidation;
+
 namespace SedaWears.Application.Features.Profile.Commands;
 
 public record GetCustomerAvatarUploadUrlCommand(string FileName, string ContentType) : IRequest<ImageUploadUrlResponse>;
+
+public class GetCustomerAvatarUploadUrlCommandValidator : AbstractValidator<GetCustomerAvatarUploadUrlCommand>
+{
+    public GetCustomerAvatarUploadUrlCommandValidator()
+    {
+        RuleFor(v => v.FileName).NotEmpty().WithMessage("File name is required.");
+        RuleFor(v => v.ContentType).NotEmpty().WithMessage("Content type is required.");
+    }
+}
+
 
 public class GetCustomerAvatarUploadUrlCommandHandler(
     UserManager<User> userManager,

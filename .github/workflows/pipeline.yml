@@ -1,0 +1,304 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to deploy (e.g., 1.2.3)'
+        required: true
+      skip_migration:
+        description: 'Skip database migration'
+        required: true
+        default: 'Yes'
+        type: choice
+        options:
+          - 'Yes'
+          - 'No'
+
+env:
+  NUGET_CACHE_PATH: ~/.nuget/packages
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NUGET_CACHE_PATH }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.sln', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Build Solution
+        run: dotnet build -c Release
+
+      - name: Run Tests
+        run: dotnet test -c Release --no-build --no-restore --verbosity normal
+
+  publish:
+    name: Publish Docker Image
+    needs: build
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Image Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/sedawears-api
+          tags: |
+            type=raw,value=${{ github.event.inputs.version }}
+            type=sha,format=short,prefix=sha-
+            type=raw,value=latest,enable=${{ github.event.inputs.environment == 'production' }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ github.event.inputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  bundle:
+    name: Generate Migration Bundle
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.skip_migration == 'No'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install EF Tool
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Cache EF Bundle
+        uses: actions/cache@v4
+        with:
+          path: efbundle
+          key: ${{ runner.os }}-efbundle-${{ hashFiles('SedaWears.Infrastructure/Persistence/**/*.cs') }}
+          restore-keys: |
+            ${{ runner.os }}-efbundle-
+
+      - name: Build EF Bundle
+        run: |
+          if [ ! -f efbundle ]; then
+            dotnet ef migrations bundle \
+              --project SedaWears.Infrastructure \
+              --startup-project SedaWears.Presentation \
+              --self-contained \
+              -r linux-x64 \
+              -o efbundle \
+              --force
+          else
+            echo "EF Bundle found in cache. Skipping generation."
+          fi
+
+      - name: Upload Migration Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: efbundle
+          path: efbundle
+          retention-days: 1
+
+  migrate:
+    name: Migrate Database
+    needs: bundle
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.skip_migration == 'No'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Download Migration Bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: efbundle
+          path: ./
+
+      - name: Copy Bundle to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "efbundle"
+          target: "/var/www/sedawears-${{ github.event.inputs.environment }}"
+          strip_components: 0
+
+      - name: Execute Migration Bundle
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_USER: ${{ vars.DB_USER }}
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          DB_CONNECTION: Host=postgres;Database=${{ vars.DB_NAME }};Username=${{ vars.DB_USER }};Password=${{ secrets.DB_PASSWORD }}
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DB_CONNECTION,ENVIRONMENT
+          script: |
+            set -e
+
+            PROJECT_DIR="/var/www/sedawears-${ENVIRONMENT}"
+            BUNDLE_PATH="$PROJECT_DIR/efbundle"
+
+            chmod +x "$BUNDLE_PATH"
+
+            echo "Running migrations for $ENVIRONMENT..."
+
+            docker run --rm \
+              --network winkly_infra \
+              -v "$BUNDLE_PATH:/efbundle:ro" \
+              --entrypoint /efbundle \
+              -e "ConnectionStrings__Postgres=${DB_CONNECTION}" \
+              mcr.microsoft.com/dotnet/runtime-deps:10.0 \
+              --connection "${DB_CONNECTION}"
+
+            rm -f "$BUNDLE_PATH"
+
+            echo "Migration completed successfully."
+
+  deploy:
+    name: Deploy
+    needs: [ publish, migrate ]
+    if: |
+      always() &&
+      !cancelled() &&
+      github.event_name == 'workflow_dispatch' &&
+      needs.publish.result == 'success' &&
+      (github.event.inputs.skip_migration == 'Yes' || needs.migrate.result == 'success')
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    concurrency:
+      group: deploy_${{ github.event.inputs.environment }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Prepare Server Directory
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            mkdir -p "/var/www/sedawears-${{ github.event.inputs.environment }}"
+            mkdir -p "/var/www/sedawears-${{ github.event.inputs.environment }}/aspnet-keys"
+            chown -R 1654:1654 "/var/www/sedawears-${{ github.event.inputs.environment }}/aspnet-keys"
+            chmod 700 "/var/www/sedawears-${{ github.event.inputs.environment }}/aspnet-keys"
+
+      - name: Copy Compose File to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-stack.${{ github.event.inputs.environment == 'production' && 'prod' || 'staging' }}.yml"
+          target: "/var/www/sedawears-${{ github.event.inputs.environment }}"
+          strip_components: 0
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_USER: ${{ vars.DB_USER }}
+          STORAGE_ACCESS_KEY_ID: ${{ vars.STORAGE_ACCESS_KEY_ID }}
+          STORAGE_BUCKET_NAME: ${{ vars.STORAGE_BUCKET_NAME }}
+          STORAGE_ENDPOINT: ${{ vars.STORAGE_ENDPOINT }}
+          STORAGE_PUBLIC_URL: ${{ vars.STORAGE_PUBLIC_URL }}
+          STORAGE_REGION: ${{ vars.STORAGE_REGION }}
+          STORAGE_SECRET_ACCESS_KEY: ${{ secrets.STORAGE_SECRET_ACCESS_KEY }}
+          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+          RABBITMQ_USER: ${{ vars.RABBITMQ_USER }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ALLOWED_HOSTS: ${{ vars.ALLOWED_HOSTS }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
+          NOREPLY_EMAIL: ${{ vars.NOREPLY_EMAIL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          OPENINARY_API_SECRET: ${{ secrets.OPENINARY_API_SECRET }}
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          GHCR_ACTOR: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          VERSION: ${{ github.event.inputs.version }}
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: ALLOWED_HOSTS,CONTACT_EMAIL,DB_NAME,DB_PASSWORD,DB_USER,ENVIRONMENT,GHCR_ACTOR,GHCR_TOKEN,GITHUB_REPOSITORY_OWNER,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,NOREPLY_EMAIL,OPENINARY_API_SECRET,RABBITMQ_PASSWORD,RABBITMQ_USER,REDIS_PASSWORD,RESEND_API_KEY,STORAGE_ACCESS_KEY_ID,STORAGE_BUCKET_NAME,STORAGE_ENDPOINT,STORAGE_PUBLIC_URL,STORAGE_REGION,STORAGE_SECRET_ACCESS_KEY,VERSION
+          script: |
+            set -e
+
+            PROJECT_DIR="/var/www/sedawears-${ENVIRONMENT}"
+            COMPOSE_FILE="docker-stack.$( [ "$ENVIRONMENT" = "production" ] && echo "prod" || echo "staging" ).yml"
+            STACK_NAME="sedawears_${ENVIRONMENT}"
+            IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER}/sedawears-api:${VERSION}"
+
+            cd "$PROJECT_DIR"
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
+
+            echo "Pulling $IMAGE..."
+            docker pull "$IMAGE"
+
+            echo "Deploying stack $STACK_NAME..."
+            docker stack deploy -c "$COMPOSE_FILE" --with-registry-auth "$STACK_NAME"
+
+            echo "Deployment of $IMAGE to $ENVIRONMENT successful!"

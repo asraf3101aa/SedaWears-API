@@ -1,26 +1,26 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using SedaWears.Application.Common.Exceptions;
-using SedaWears.Domain.Enums;
-using SedaWears.Domain.Entities;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Features.Users.Models;
 using SedaWears.Application.Features.Users.Projections;
 
 namespace SedaWears.Application.Features.Profile.Queries;
 
-public record GetMeQuery : IRequest<BaseUserDto>;
+public record GetMeQuery : IRequest<UserDto>;
 
 public class GetMeHandler(
-    IUserService userService,
-    ICurrentUser currentUser) : IRequestHandler<GetMeQuery, BaseUserDto>
+    IApplicationDbContext dbContext,
+    ICurrentUser currentUser) : IRequestHandler<GetMeQuery, UserDto>
 {
-    public async Task<BaseUserDto> Handle(GetMeQuery request, CancellationToken ct)
+    public async Task<UserDto> Handle(GetMeQuery request, CancellationToken ct)
     {
-        return await userService.GetUserByIdAndRoleAsync<BaseUserDto>(
-            currentUser.Id!.Value,
-            currentUser.Role!.Value,
-            ct);
+        var userId = currentUser.Id ?? throw new UnauthorizedAccessException("User is not authenticated.");
+
+        return await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .ProjectToUser()
+            .FirstOrDefaultAsync(ct)
+            ?? throw new UnauthorizedAccessException("User not found.");
     }
 }

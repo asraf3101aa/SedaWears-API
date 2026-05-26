@@ -9,13 +9,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Postgres=Host=postgres;Port=5432;Database=luga_store;Username=postgres;Password=postgres
       - ConnectionStrings__Redis=redis:6379
-      - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Username=guest
-      - RabbitMQ__Password=guest
     depends_on:
       - postgres
       - redis
-      - rabbitmq
 
   postgres:
     image: postgres:17-alpine
@@ -32,12 +28,6 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
 
 volumes:
   postgres_data:

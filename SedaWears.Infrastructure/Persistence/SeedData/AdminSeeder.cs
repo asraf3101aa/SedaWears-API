@@ -16,28 +16,29 @@ public static class AdminSeeder
         using var scope = serviceProvider.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
-        var existingAdmin = await userManager.Users
-            .FirstOrDefaultAsync(u => u.Email == email && u.Role == UserRole.Admin);
+        // Ensure roles are seeded first
+        await RoleSeeder.SeedRolesAsync(serviceProvider);
 
-        if (existingAdmin != null)
+        var existingAdmin = await userManager.FindByEmailAsync(email);
+        if (existingAdmin != null && await userManager.IsInRoleAsync(existingAdmin, nameof(UserRole.Admin)))
         {
             return;
         }
 
         var user = new User
         {
-            UserName = Guid.NewGuid().ToString(),
+            UserName = email,
             Email = email,
             EmailConfirmed = true,
             FirstName = firstName,
             LastName = lastName,
-            IsActive = true,
-            Role = UserRole.Admin
+
         };
 
         var result = await userManager.CreateAsync(user, password);
         if (result.Succeeded)
         {
+            await userManager.AddToRoleAsync(user, nameof(UserRole.Admin));
             Console.WriteLine($"Admin user {email} created successfully.");
         }
         else

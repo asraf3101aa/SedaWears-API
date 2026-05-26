@@ -72,13 +72,14 @@ public static class DependencyInjection
 
     private static IServiceCollection AddIdentity(this IServiceCollection services)
     {
-        services.AddIdentityCore<User>(options =>
+        services.AddIdentity<User, IdentityRole<int>>(options =>
         {
             options.Password.RequireDigit = true;
             options.Password.RequireLowercase = true;
             options.Password.RequireUppercase = true;
             options.Password.RequireNonAlphanumeric = false;
             options.Password.RequiredLength = 6;
+            options.User.RequireUniqueEmail = true;
         })
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
@@ -90,7 +91,6 @@ public static class DependencyInjection
     {
         services.AddSingleton<IS3Service, S3Service>();
 
-        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IGoogleAuthService, GoogleAuthService>();
         services.AddScoped<IEmailService, EmailService>();
 

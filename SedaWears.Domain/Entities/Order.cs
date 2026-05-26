@@ -9,13 +9,20 @@ public class Order : BaseEntity
     public int? UserId { get; set; }
     public User? User { get; set; }
 
+    public int? GuestId { get; set; }
+    public Guest? Guest { get; set; }
+
     public int ShopId { get; set; }
     public Shop Shop { get; set; } = null!;
 
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
     public decimal TotalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
 
-    public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+    public int? PromoCodeId { get; set; }
+    public PromoCode? PromoCode { get; set; }
+
+    public ICollection<OrderItem> Items { get; set; } = [];
 }
 
 public class OrderItem : BaseEntity

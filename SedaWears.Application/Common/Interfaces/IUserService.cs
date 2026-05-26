@@ -1,33 +1,29 @@
 using SedaWears.Application.Common.Models;
 using SedaWears.Application.Features.Users.Models;
 using SedaWears.Domain.Enums;
-using SedaWears.Domain.Entities;
 
 namespace SedaWears.Application.Common.Interfaces;
 
 public interface IUserService
 {
-    Task<PaginatedList<T>> GetUsersByRoleAsync<T>(
+    Task<PaginatedList<UserDto>> GetUsersByRoleAsync(
         UserRole role,
         int pageNumber,
         int pageSize,
-        bool? isInvited = null,
-        string? sortBy = null,
-        string? sortOrder = "desc",
-        CancellationToken ct = default) where T : BaseUserDto;
+        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        SortOrder sortOrder = SortOrder.Desc,
+        CancellationToken ct = default);
 
-    Task<PaginatedList<ManagerDto>> GetShopManagersAsync(
+    Task<PaginatedList<UserDto>> GetShopManagersAsync(
         int shopId,
         int pageNumber,
         int pageSize,
-        bool? isInvited = null,
-        string? sortBy = null,
-        string? sortOrder = "desc",
+        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        SortOrder sortOrder = SortOrder.Desc,
         CancellationToken ct = default);
-    Task<T> GetUserByIdAndRoleAsync<T>(
+
+    Task<UserDto> GetUserByIdAndRoleAsync(
         int userId,
         UserRole role,
-        CancellationToken ct = default) where T : BaseUserDto;
-
-    Task SendInvitationEmailAsync(User user);
+        CancellationToken ct = default);
 }

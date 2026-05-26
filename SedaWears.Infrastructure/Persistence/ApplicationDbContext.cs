@@ -1,14 +1,14 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Interfaces;
-using SedaWears.Domain.Common;
 using SedaWears.Domain.Entities;
 
 namespace SedaWears.Infrastructure.Persistence;
 
 public class ApplicationDbContext(
-    DbContextOptions<ApplicationDbContext> options) : IdentityUserContext<User, int>(options), IApplicationDbContext
+    DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<User, IdentityRole<int>, int>(options), IApplicationDbContext
 {
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
@@ -21,9 +21,17 @@ public class ApplicationDbContext(
     public DbSet<ProductSizeStock> ProductSizeStocks => Set<ProductSizeStock>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
     public DbSet<Shop> Shops => Set<Shop>();
-    public DbSet<ShopMember> ShopMembers => Set<ShopMember>();
+    public DbSet<ShopOwner> ShopOwners => Set<ShopOwner>();
+    public DbSet<ShopManager> ShopManagers => Set<ShopManager>();
+    public DbSet<InvitedAdmin> InvitedAdmins => Set<InvitedAdmin>();
+    public DbSet<InvitedShopOwner> InvitedShopOwners => Set<InvitedShopOwner>();
+    public DbSet<InvitedShopManager> InvitedShopManagers => Set<InvitedShopManager>();
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
+    public DbSet<Discount> Discounts => Set<Discount>();
+    public DbSet<Guest> Guests => Set<Guest>();
+    public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     DbSet<User> IApplicationDbContext.Users => Users;
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
