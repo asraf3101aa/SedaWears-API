@@ -23,7 +23,7 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /home/app/.aspnet/DataProtection-Keys && \
-    chown -R app:app /home/app/.aspnet
+    chown -R app:app /home/app
 
 COPY --chown=app:app --from=build /app/publish .
 
