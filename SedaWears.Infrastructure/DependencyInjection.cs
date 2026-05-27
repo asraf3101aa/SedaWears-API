@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using FluentValidation;
 using Resend;
 using StackExchange.Redis;
@@ -67,7 +68,27 @@ public static class DependencyInjection
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
             var config = sp.GetRequiredService<ConnectionStringsConfig>();
-            return ConnectionMultiplexer.Connect(config.Redis);
+            var env = sp.GetRequiredService<IHostEnvironment>();
+            var options = ConfigurationOptions.Parse(config.Redis);
+
+            if (env.IsDevelopment())
+            {
+                // Bypass SSL certificate validation to support self-signed/untrusted certificates in development
+                options.CertificateValidation += (sender, certificate, chain, sslPolicyErrors) => true;
+            }
+            else if (!string.IsNullOrEmpty(config.RedisCertThumbprint))
+            {
+                // Pin exact certificate thumbprint to trust it securely in staging/production without full CA system trust
+                options.CertificateValidation += (sender, certificate, chain, sslPolicyErrors) =>
+                {
+                    if (certificate == null) return false;
+
+                    string presentedThumbprint = certificate.GetCertHashString(System.Security.Cryptography.HashAlgorithmName.SHA256);
+                    return string.Equals(presentedThumbprint, config.RedisCertThumbprint, StringComparison.OrdinalIgnoreCase);
+                };
+            }
+
+            return ConnectionMultiplexer.Connect(options);
         });
 
         services.AddDataProtection();
