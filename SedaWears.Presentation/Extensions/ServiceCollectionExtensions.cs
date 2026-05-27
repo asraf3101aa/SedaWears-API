@@ -77,6 +77,8 @@ public static class ServiceCollectionExtensions
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
                                      | ForwardedHeaders.XForwardedProto
                                      | ForwardedHeaders.XForwardedHost;
+            options.KnownProxies.Clear();
+            options.KnownIPNetworks.Clear();
         });
 
         services.AddControllers()
@@ -97,7 +99,7 @@ public static class ServiceCollectionExtensions
             .Configure<IOptions<AppConfig>>((options, configOpt) =>
             {
                 var origins = (configOpt.Value.Cors.AllowedOrigins ?? string.Empty)
-                    .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 options.AddPolicy("Default", policy =>
                     policy.WithOrigins(origins)
                           .AllowAnyHeader()
