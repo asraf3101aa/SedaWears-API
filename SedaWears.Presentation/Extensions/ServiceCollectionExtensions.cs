@@ -77,8 +77,6 @@ public static class ServiceCollectionExtensions
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
                                      | ForwardedHeaders.XForwardedProto
                                      | ForwardedHeaders.XForwardedHost;
-            options.KnownProxies.Clear();
-            options.KnownIPNetworks.Clear();
         });
 
         services.AddControllers()
