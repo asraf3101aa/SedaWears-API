@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.HostFiltering;
 
 using SedaWears.Application;
 using SedaWears.Infrastructure;
@@ -78,6 +79,15 @@ public static class ServiceCollectionExtensions
                                      | ForwardedHeaders.XForwardedProto
                                      | ForwardedHeaders.XForwardedHost;
         });
+
+        services.AddOptions<HostFilteringOptions>()
+            .Configure<IConfiguration, IHostEnvironment>((options, config, env) =>
+            {
+                var allowedHostsString = config["AllowedHosts"]
+                    ?? (env.IsDevelopment() ? "*" : string.Empty);
+
+                options.AllowedHosts = allowedHostsString.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            });
 
         services.AddControllers()
     .AddJsonOptions(options =>
