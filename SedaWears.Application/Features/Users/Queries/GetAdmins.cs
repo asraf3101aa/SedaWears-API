@@ -8,10 +8,10 @@ using SedaWears.Application.Common.Validators;
 namespace SedaWears.Application.Features.Users.Queries;
 
 public record GetAdminsQuery(
-    int PageNumber = 1,
-    int PageSize = 10,
-    UsersSortBy SortBy = UsersSortBy.CreatedAt,
-    SortOrder SortOrder = SortOrder.Desc)
+    int PageNumber,
+    int PageSize,
+    UsersSortBy SortBy,
+    SortOrder SortOrder)
     : IRequest<PaginatedList<UserDto>>, IPaginatedQuery;
 
 public class GetAdminsValidator : PaginatedQueryValidator<GetAdminsQuery> { }

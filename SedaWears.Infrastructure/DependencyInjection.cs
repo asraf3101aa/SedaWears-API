@@ -43,6 +43,7 @@ public static class DependencyInjection
             .AddConfigWithValidation<GoogleConfig, GoogleConfigValidator>("Google")
             .AddConfigWithValidation<AppConfig, AppConfigValidator>("App")
             .AddConfigWithValidation<S3Config, S3ConfigValidator>("S3")
+            .AddConfigWithValidation<OpeninaryConfig, OpeninaryConfigValidator>("Openinary")
             .AddConfigWithValidation<EmailConfig, EmailConfigValidator>("Email")
             .AddConfigWithValidation<ResendConfig, ResendConfigValidator>("Resend")
             .AddConfigWithValidation<RateLimitingConfig, RateLimitingConfigValidator>("RateLimiting");

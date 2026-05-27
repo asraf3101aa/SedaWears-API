@@ -4,18 +4,18 @@ using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Models;
 using SedaWears.Application.Features.Categories.Models;
 using SedaWears.Application.Features.Categories.Projections;
-
 using SedaWears.Application.Common.Validators;
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Categories.Queries;
 
 public record GetCategoriesQuery(
-    int? ShopId = null,
-    int PageNumber = 1,
-    int PageSize = 10,
-    string? SortBy = null,
-    string? SortOrder = "asc",
-    string? Search = null) : IRequest<PaginatedList<CategoryDto>>, IPaginatedQuery;
+    int? ShopId,
+    int PageNumber,
+    int PageSize,
+    CategorySortBy SortBy,
+    SortOrder SortOrder,
+    string? Search) : IRequest<PaginatedList<CategoryDto>>, IPaginatedQuery;
 
 public class GetCategoriesValidator : PaginatedQueryValidator<GetCategoriesQuery> { }
 
@@ -35,13 +35,13 @@ public class GetCategoriesHandler(IApplicationDbContext dbContext) : IRequestHan
             query = query.Where(c => EF.Functions.ILike(c.Name, $"%{searchTerm}%"));
         }
 
-        var isDescending = request.SortOrder?.ToLower() == "desc";
-        query = (request.SortBy?.ToLower()) switch
+        var isDescending = request.SortOrder == SortOrder.Desc;
+        query = request.SortBy switch
         {
-            "name" => isDescending ? query.OrderByDescending(c => c.Name) : query.OrderBy(c => c.Name),
-            "isactive" => isDescending ? query.OrderByDescending(c => c.IsActive) : query.OrderBy(c => c.IsActive),
-            "displayorder" => isDescending ? query.OrderByDescending(c => c.DisplayOrder) : query.OrderBy(c => c.DisplayOrder),
-            _ => isDescending ? query.OrderByDescending(c => c.DisplayOrder) : query.OrderBy(c => c.DisplayOrder)
+            CategorySortBy.Name => isDescending ? query.OrderByDescending(c => c.Name) : query.OrderBy(c => c.Name),
+            CategorySortBy.IsActive => isDescending ? query.OrderByDescending(c => c.IsActive) : query.OrderBy(c => c.IsActive),
+            CategorySortBy.DisplayOrder => isDescending ? query.OrderByDescending(c => c.DisplayOrder) : query.OrderBy(c => c.DisplayOrder),
+            _ => query.OrderByDescending(c => c.DisplayOrder)
         };
 
         var totalCount = await query.CountAsync(ct);

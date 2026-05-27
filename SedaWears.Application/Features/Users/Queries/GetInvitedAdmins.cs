@@ -8,10 +8,10 @@ using SedaWears.Domain.Enums;
 namespace SedaWears.Application.Features.Users.Queries;
 
 public record GetInvitedAdminsQuery(
-    int PageNumber = 1,
-    int PageSize = 10,
-    InvitedAdminsSortBy SortBy = InvitedAdminsSortBy.CreatedAt,
-    SortOrder SortOrder = SortOrder.Desc) : IRequest<PaginatedList<InvitedUserDto>>;
+    int PageNumber,
+    int PageSize,
+    InvitedAdminsSortBy SortBy,
+    SortOrder SortOrder) : IRequest<PaginatedList<InvitedUserDto>>;
 
 public class GetInvitedAdminsHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetInvitedAdminsQuery, PaginatedList<InvitedUserDto>>

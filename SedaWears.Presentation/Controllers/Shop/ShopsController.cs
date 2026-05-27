@@ -20,10 +20,10 @@ public class ShopsController(ISender mediator) : ControllerBase
     public async Task<IActionResult> GetShops(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? sortBy = "createdAt",
-        [FromQuery] string? sortOrder = "desc",
+        [FromQuery] ShopSortBy sortBy = ShopSortBy.CreatedAt,
+        [FromQuery] SortOrder sortOrder = SortOrder.Desc,
         [FromQuery] string? search = null)
-        => Ok(await mediator.Send(new GetShopsQuery(pageNumber, pageSize, sortBy, sortOrder, search)));
+        => Ok(await mediator.Send(new GetShopsQuery(sortBy, sortOrder, search, pageNumber, pageSize)));
 
     [HttpGet("{id:int}")]
     [Authorize]

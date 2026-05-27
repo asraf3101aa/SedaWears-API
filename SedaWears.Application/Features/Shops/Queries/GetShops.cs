@@ -5,21 +5,22 @@ using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Features.Shops.Models;
 using SedaWears.Application.Features.Shops.Projections;
 using SedaWears.Application.Common.Models;
-
+using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Common.Validators;
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Shops.Queries;
 
 public record GetShopsQuery(
-    int PageNumber = 1,
-    int PageSize = 10,
-    string? SortBy = "createdAt",
-    string? SortOrder = "desc",
-    string? Search = null) : IRequest<PaginatedList<ShopDto>>, IPaginatedQuery;
+    ShopSortBy SortBy,
+    SortOrder SortOrder,
+    string? Search,
+    int PageNumber,
+    int PageSize) : IRequest<PaginatedList<ShopDto>>, IPaginatedQuery;
 
 public class GetShopsValidator : PaginatedQueryValidator<GetShopsQuery> { }
 
-public class GetShopsHandler(IApplicationDbContext dbContext) : IRequestHandler<GetShopsQuery, PaginatedList<ShopDto>>
+public class GetShopsHandler(IApplicationDbContext dbContext, OpeninaryConfig config) : IRequestHandler<GetShopsQuery, PaginatedList<ShopDto>>
 {
     public async Task<PaginatedList<ShopDto>> Handle(GetShopsQuery request, CancellationToken ct)
     {
@@ -33,29 +34,21 @@ public class GetShopsHandler(IApplicationDbContext dbContext) : IRequestHandler<
                                      EF.Functions.ILike(s.SubdomainSlug, $"%{searchTerm}%"));
         }
 
-        if (!string.IsNullOrEmpty(request.SortBy))
+        var isDescending = request.SortOrder == SortOrder.Desc;
+        query = request.SortBy switch
         {
-            var isDescending = request.SortOrder?.ToLower() == "desc";
-            query = request.SortBy.ToLower() switch
-            {
-                "name" => isDescending ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
-                "slug" => isDescending ? query.OrderByDescending(s => s.SubdomainSlug) : query.OrderBy(s => s.SubdomainSlug),
-                "isactive" => isDescending ? query.OrderByDescending(s => s.IsActive) : query.OrderBy(s => s.IsActive),
-                "createdat" => isDescending ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt),
-                _ => isDescending ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt)
-            };
-        }
-        else
-        {
-            query = query.OrderByDescending(s => s.CreatedAt);
-        }
+            ShopSortBy.Name => isDescending ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
+            ShopSortBy.Slug => isDescending ? query.OrderByDescending(s => s.SubdomainSlug) : query.OrderBy(s => s.SubdomainSlug),
+            ShopSortBy.IsActive => isDescending ? query.OrderByDescending(s => s.IsActive) : query.OrderBy(s => s.IsActive),
+            ShopSortBy.CreatedAt => isDescending ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt),
+            _ => query.OrderByDescending(s => s.CreatedAt)
+        };
 
         var totalCount = await query.CountAsync(ct);
         var items = await query
-            .OrderByDescending(s => s.CreatedAt) // Default sorting if not specified, but usually handled above
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .ProjectToShop()
+            .ProjectToShop(config.BaseUrl)
             .ToListAsync(ct);
 
         return new PaginatedList<ShopDto>(items, totalCount, request.PageNumber, request.PageSize);

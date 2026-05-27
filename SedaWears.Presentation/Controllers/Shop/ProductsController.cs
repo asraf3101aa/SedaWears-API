@@ -23,8 +23,8 @@ public class ProductsController(ISender mediator) : ControllerBase
         [FromQuery] int? categoryId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] string? sortOrder = "asc",
+        [FromQuery] ProductSortBy sortBy = ProductSortBy.CreatedAt,
+        [FromQuery] SortOrder sortOrder = SortOrder.Asc,
         [FromQuery] string? search = null,
         CancellationToken ct = default)
         => Ok(await mediator.Send(new GetProductsQuery(categoryId, shopId, pageNumber, pageSize, sortBy, sortOrder, search), ct));

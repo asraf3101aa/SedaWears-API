@@ -7,13 +7,15 @@ using SedaWears.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using SedaWears.Domain.Entities;
+using SedaWears.Application.Common.Settings;
 
 namespace SedaWears.Application.Common.Services;
 
 public class UserService(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
-    UserManager<User> userManager) : IUserService
+    UserManager<User> userManager,
+    OpeninaryConfig config) : IUserService
 {
     public async Task<PaginatedList<UserDto>> GetUsersByRoleAsync(
         UserRole role,
@@ -46,7 +48,7 @@ public class UserService(
 
         var total = await query.CountAsync(ct);
         var items = await query
-            .ProjectToUser()
+            .ProjectToUser(config.BaseUrl)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
@@ -83,7 +85,7 @@ public class UserService(
         var total = await query.CountAsync(ct);
         var items = await query
             .Select(sm => sm.User)
-            .ProjectToUser()
+            .ProjectToUser(config.BaseUrl)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
@@ -100,7 +102,7 @@ public class UserService(
         return await userManager.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .ProjectToUser()
+            .ProjectToUser(config.BaseUrl)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("User not found.");
     }

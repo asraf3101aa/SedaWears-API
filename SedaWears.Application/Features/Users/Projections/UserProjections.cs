@@ -5,7 +5,7 @@ namespace SedaWears.Application.Features.Users.Projections;
 
 public static class UserProjections
 {
-    public static IQueryable<UserDto> ProjectToUser(this IQueryable<User> query)
+    public static IQueryable<UserDto> ProjectToUser(this IQueryable<User> query, string baseMediaUrl)
     {
         return query.Select(u => new UserDto(
             u.Id,
@@ -13,7 +13,7 @@ public static class UserProjections
             u.LastName,
             u.Email,
             u.PhoneNumber,
-            u.AvatarFileName,
+            string.IsNullOrEmpty(u.AvatarFileName) ? null : baseMediaUrl + "/t/" + u.AvatarFileName,
             u.EmailConfirmed,
             u.CreatedAt
         ));

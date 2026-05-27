@@ -11,7 +11,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         var basePath = Directory.GetCurrentDirectory();
-        
+
         // Robust directory resolution to find SedaWears.Presentation
         var presentationPath = Path.Combine(basePath, "SedaWears.Presentation");
         if (Directory.Exists(presentationPath))

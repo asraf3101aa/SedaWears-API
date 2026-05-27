@@ -22,8 +22,8 @@ public class CategoriesController(ISender mediator) : ControllerBase
         int shopId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? sortBy = "name",
-        [FromQuery] string? sortOrder = "asc",
+        [FromQuery] CategorySortBy sortBy = CategorySortBy.DisplayOrder,
+        [FromQuery] SortOrder sortOrder = SortOrder.Asc,
         [FromQuery] string? search = null,
         CancellationToken ct = default)
         => Ok(await mediator.Send(new GetCategoriesQuery(shopId, pageNumber, pageSize, sortBy, sortOrder, search), ct));

@@ -7,6 +7,7 @@ using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Features.Users.Projections;
 using Microsoft.AspNetCore.Identity;
 using SedaWears.Domain.Enums;
+using SedaWears.Application.Common.Settings;
 
 namespace SedaWears.Application.Features.Users.Queries;
 
@@ -15,7 +16,8 @@ public record GetUserQuery(UserRole? Role = null, int? Id = null) : IRequest<Use
 public class GetUserHandler(
     UserManager<User> userManager,
     ICurrentUser currentUser,
-    IOriginContext originContext) : IRequestHandler<GetUserQuery, UserDto>
+    IOriginContext originContext,
+    OpeninaryConfig config) : IRequestHandler<GetUserQuery, UserDto>
 {
     public async Task<UserDto> Handle(GetUserQuery request, CancellationToken ct)
     {
@@ -29,7 +31,7 @@ public class GetUserHandler(
         return await userManager.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .ProjectToUser()
+            .ProjectToUser(config.BaseUrl)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException($"{role} not found.");
     }

@@ -30,8 +30,8 @@ public class ManagersController(ISender mediator) : ControllerBase
         int shopId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string sortBy = "createdAt",
-        [FromQuery] string sortOrder = "desc")
+        [FromQuery] ShopMemberSortBy sortBy = ShopMemberSortBy.CreatedAt,
+        [FromQuery] SortOrder sortOrder = SortOrder.Desc)
         => Ok(await mediator.Send(new GetShopMembersQuery(shopId, UserRole.Manager, pageNumber, pageSize, sortBy, sortOrder)));
 
     [HttpGet("invited")]
@@ -45,7 +45,7 @@ public class ManagersController(ISender mediator) : ControllerBase
     [HttpGet("{managerId:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
     public async Task<IActionResult> GetShopManager([FromRoute] int shopId, [FromRoute] int managerId)
-        => Ok(await mediator.Send(new GetShopMemberQuery(shopId, managerId)));
+        => Ok(await mediator.Send(new GetShopManagerQuery(shopId, managerId)));
 
     [HttpPatch("{managerId:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]

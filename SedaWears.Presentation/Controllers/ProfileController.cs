@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SedaWears.Application.Features.Profile.Queries;
 using SedaWears.Application.Features.Shops.Queries;
 using SedaWears.Domain.Enums;
+using SedaWears.Application.Features.Shops.Models;
 
 using SedaWears.Application.Features.Users.Commands;
 using SedaWears.Application.Features.Users.Models;
@@ -42,8 +43,8 @@ public class ProfileController(ISender mediator) : ControllerBase
     public async Task<IActionResult> GetMyShops(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string? sortBy = "createdAt",
-        [FromQuery] string? sortOrder = "desc",
+        [FromQuery] ShopSortBy sortBy = ShopSortBy.CreatedAt,
+        [FromQuery] SortOrder sortOrder = SortOrder.Desc,
         [FromQuery] string? search = null)
-        => Ok(await mediator.Send(new GetMyShopsQuery(pageNumber, pageSize, sortBy, sortOrder, search)));
+        => Ok(await mediator.Send(new GetMyShopsQuery(sortBy, sortOrder, search, pageNumber, pageSize)));
 }

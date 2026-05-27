@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Interfaces;
+using SedaWears.Application.Common.Settings;
 
 namespace SedaWears.Application.Features.Wishlist.Queries;
 
@@ -13,7 +14,7 @@ public record WishlistDto(
 
 public record GetWishlistQuery() : IRequest<List<WishlistDto>>;
 
-public class GetWishlistHandler(IApplicationDbContext dbContext, ICurrentUser currentUser) : IRequestHandler<GetWishlistQuery, List<WishlistDto>>
+public class GetWishlistHandler(IApplicationDbContext dbContext, ICurrentUser currentUser, OpeninaryConfig config) : IRequestHandler<GetWishlistQuery, List<WishlistDto>>
 {
     public async Task<List<WishlistDto>> Handle(GetWishlistQuery request, CancellationToken ct)
     {
@@ -27,7 +28,7 @@ public class GetWishlistHandler(IApplicationDbContext dbContext, ICurrentUser cu
                 w.ProductId,
                 w.Product.Name,
                 w.Product.Price,
-                w.Product.Images.OrderBy(i => i.Order).Select(i => i.FileName).FirstOrDefault(),
+                w.Product.Images.OrderBy(i => i.Order).Select(i => string.IsNullOrEmpty(i.FileName) ? null : config.BaseUrl + "/t/" + i.FileName).FirstOrDefault(),
                 w.CreatedAt))
             .ToListAsync(ct);
     }
