@@ -68,6 +68,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddHealthChecks();
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
@@ -76,10 +77,7 @@ public static class ServiceCollectionExtensions
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
                                      | ForwardedHeaders.XForwardedProto
                                      | ForwardedHeaders.XForwardedHost;
-            options.KnownProxies.Add(IPAddress.Loopback);
         });
-
-
 
         services.AddControllers()
     .AddJsonOptions(options =>

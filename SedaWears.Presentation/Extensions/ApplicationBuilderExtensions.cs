@@ -8,9 +8,6 @@ public static class ApplicationBuilderExtensions
 
         app.UseExceptionHandler();
 
-        if (!app.Environment.IsDevelopment())
-            app.UseHttpsRedirection();
-
         app.UseCors("Default");
         app.UseRateLimiter();
 
@@ -19,6 +16,7 @@ public static class ApplicationBuilderExtensions
         app.UseAuthorization();
 
         app.MapControllers();
+        app.MapHealthChecks("/health");
 
         return app;
     }
