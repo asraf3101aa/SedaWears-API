@@ -54,12 +54,7 @@ public static class ServiceCollectionExtensions
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
-        services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
-                                     | ForwardedHeaders.XForwardedProto
-                                     | ForwardedHeaders.XForwardedHost;
-        });
+        services.ConfigureOptions<ForwardedHeadersConfiguration>();
 
         services.AddControllers()
     .AddJsonOptions(options =>
