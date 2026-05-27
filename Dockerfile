@@ -22,16 +22,10 @@ WORKDIR /app
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-# Ensure the user running the app owns the directory
-RUN mkdir -p /home/app/.aspnet/DataProtection-Keys && \
-    chown -R app:app /home/app/.aspnet
-
 COPY --chown=app:app --from=build /app/publish .
 
 USER app
 
 ENV ASPNETCORE_HTTP_PORTS=8080
-
-EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "SedaWears.Presentation.dll"]
