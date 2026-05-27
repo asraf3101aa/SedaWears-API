@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.DataProtection.StackExchangeRedis;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Common.Settings.Validators;
@@ -59,7 +62,6 @@ public static class DependencyInjection
             options.UseNpgsql(config.Postgres, o =>
                 o.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
         });
-
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -67,6 +69,13 @@ public static class DependencyInjection
             var config = sp.GetRequiredService<ConnectionStringsConfig>();
             return ConnectionMultiplexer.Connect(config.Redis);
         });
+
+        services.AddDataProtection();
+        services.AddOptions<KeyManagementOptions>()
+            .Configure<IConnectionMultiplexer>((options, multiplexer) =>
+            {
+                options.XmlRepository = new RedisXmlRepository(() => multiplexer.GetDatabase(), "DataProtection-Keys");
+            });
 
         return services;
     }
