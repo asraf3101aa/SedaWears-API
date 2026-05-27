@@ -92,11 +92,7 @@ public static class DependencyInjection
         });
 
         services.AddDataProtection();
-        services.AddOptions<KeyManagementOptions>()
-            .Configure<IConnectionMultiplexer>((options, multiplexer) =>
-            {
-                options.XmlRepository = new RedisXmlRepository(() => multiplexer.GetDatabase(), "DataProtection-Keys");
-            });
+        services.ConfigureOptions<KeyManagementConfiguration>();
 
         return services;
     }
@@ -130,13 +126,8 @@ public static class DependencyInjection
 
     private static IServiceCollection AddResendEmail(this IServiceCollection services)
     {
-        services.AddOptions();
         services.AddHttpClient<ResendClient>();
-        services.AddOptions<ResendClientOptions>()
-            .Configure<ResendConfig>((options, config) =>
-            {
-                options.ApiToken = config.ApiKey;
-            });
+        services.ConfigureOptions<ResendClientConfiguration>();
         services.AddTransient<IResend, ResendClient>();
 
         return services;

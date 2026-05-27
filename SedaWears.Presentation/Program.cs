@@ -11,6 +11,9 @@ builder.Services.AddApiServices(builder.Configuration);
 
 var app = builder.Build();
 
+// Apply migrations at startup
+await app.InitialiseDatabaseAsync();
+
 // CLI Commands
 var rootCommand = new RootCommand("SedaWears Management CLI");
 rootCommand.SetupCliCommands(app);

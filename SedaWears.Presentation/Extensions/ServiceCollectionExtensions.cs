@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HostFiltering;
+using SedaWears.Presentation.Configurations;
 
 using SedaWears.Application;
 using SedaWears.Infrastructure;
@@ -34,27 +35,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddInfrastructure(configuration);
-        services.AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
-            .Configure<AppConfig>((options, appConfig) =>
-            {
-                options.Cookie.Name = "SedaWears.Cookie";
-                options.Cookie.Domain = appConfig.CookieDomain;
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                options.ExpireTimeSpan = TimeSpan.FromDays(30);
-                options.SlidingExpiration = true;
-                options.Events.OnRedirectToLogin = context =>
-                {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    return Task.CompletedTask;
-                };
-                options.Events.OnRedirectToAccessDenied = context =>
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return Task.CompletedTask;
-                };
-            });
+        services.ConfigureOptions<CookieAuthenticationConfiguration>();
 
         return services;
     }
@@ -80,15 +61,6 @@ public static class ServiceCollectionExtensions
                                      | ForwardedHeaders.XForwardedHost;
         });
 
-        services.AddOptions<HostFilteringOptions>()
-            .Configure<IConfiguration, IHostEnvironment>((options, config, env) =>
-            {
-                var allowedHostsString = config["AllowedHosts"]
-                    ?? (env.IsDevelopment() ? "*" : string.Empty);
-
-                options.AllowedHosts = allowedHostsString.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            });
-
         services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -103,19 +75,8 @@ public static class ServiceCollectionExtensions
     });
 
         services.AddCors();
-        services.AddOptions<CorsOptions>()
-            .Configure<IOptions<AppConfig>>((options, configOpt) =>
-            {
-                var origins = (configOpt.Value.Cors.AllowedOrigins ?? string.Empty)
-                    .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                options.AddPolicy("Default", policy =>
-                    policy.WithOrigins(origins)
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials());
-            });
-
-
+        services.ConfigureOptions<CorsConfiguration>();
+        services.ConfigureOptions<HostFilteringConfiguration>();
 
         return services;
     }
