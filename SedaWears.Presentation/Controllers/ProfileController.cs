@@ -24,17 +24,17 @@ public class ProfileController(ISender mediator) : ControllerBase
 
     [HttpPatch]
     [Authorize]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest? request)
     {
-        await mediator.Send(new UpdateProfileCommand(request.FirstName, request.LastName, request.Phone));
+        await mediator.Send(new UpdateProfileCommand(request?.FirstName, request?.LastName, request?.Phone));
         return Ok(new { message = "Profile updated successfully." });
     }
 
     [HttpPatch("password")]
     [Authorize]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangeUserPasswordRequest request)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangeUserPasswordRequest? request)
     {
-        await mediator.Send(new ChangeUserPasswordCommand(request.OldPassword, request.NewPassword));
+        await mediator.Send(new ChangeUserPasswordCommand(request?.OldPassword, request?.NewPassword));
         return Ok(new { message = "Password changed successfully." });
     }
 

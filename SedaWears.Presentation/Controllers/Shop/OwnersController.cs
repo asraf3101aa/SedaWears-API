@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Features.Shops.Models;
 using SedaWears.Application.Features.Shops.Queries;
@@ -13,14 +12,13 @@ namespace SedaWears.Presentation.Controllers.Shop;
 
 [ApiController]
 [Route("shops/{shopId:int}/[controller]")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Global))]
 public class OwnersController(ISender mediator) : ControllerBase
 {
     [HttpPost]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)}")]
-    public async Task<IActionResult> InviteShopOwner(int shopId, [FromBody] ShopMemberInviteRequest request)
+    public async Task<IActionResult> InviteShopOwner(int shopId, [FromBody] ShopMemberInviteRequest? request)
     {
-        await mediator.Send(new InviteOwnerCommand(shopId, request.Email?.Trim()));
+        await mediator.Send(new InviteOwnerCommand(shopId, request?.Email?.Trim()));
         return Ok(new { message = "Owner added to shop successfully." });
     }
 
@@ -49,13 +47,13 @@ public class OwnersController(ISender mediator) : ControllerBase
 
     [HttpPatch("{ownerId:int}")]
     [Authorize(Roles = nameof(UserRole.Owner))]
-    public async Task<IActionResult> UpdateShopOwner([FromRoute] int shopId, [FromRoute] int ownerId, [FromBody] UpdateShopMemberRequest request)
+    public async Task<IActionResult> UpdateShopOwner([FromRoute] int shopId, [FromRoute] int ownerId, [FromBody] UpdateShopMemberRequest? request)
     {
         await mediator.Send(new UpdateShopMemberCommand(
             shopId,
             ownerId,
-            request.FirstName?.Trim() ?? string.Empty,
-            request.LastName?.Trim() ?? string.Empty));
+            request?.FirstName?.Trim() ?? string.Empty,
+            request?.LastName?.Trim() ?? string.Empty));
         return Ok(new { message = "Owner updated successfully." });
     }
 

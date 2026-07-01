@@ -39,7 +39,7 @@ public class DeleteShopMemberHandler(IApplicationDbContext dbContext, UserManage
         }
 
         if (user == null)
-            throw new NotFoundException("Shop member not found.");
+            throw new ShopNotFoundException();
 
         await dbContext.SaveChangesAsync(ct);
 

@@ -58,7 +58,7 @@ public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHan
 
             if (!categoryExists)
             {
-                throw new NotFoundException("Category not found.");
+                throw new CategoryNotFoundException();
             }
         }
 

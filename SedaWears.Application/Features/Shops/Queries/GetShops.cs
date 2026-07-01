@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,7 @@ public record GetShopsQuery(
 
 public class GetShopsValidator : PaginatedQueryValidator<GetShopsQuery> { }
 
-public class GetShopsHandler(IApplicationDbContext dbContext, OpeninaryConfig config) : IRequestHandler<GetShopsQuery, PaginatedList<ShopDto>>
+public class GetShopsHandler(IApplicationDbContext dbContext, IOptions<OpeninaryConfig> configOptions) : IRequestHandler<GetShopsQuery, PaginatedList<ShopDto>>
 {
     public async Task<PaginatedList<ShopDto>> Handle(GetShopsQuery request, CancellationToken ct)
     {
@@ -48,7 +49,7 @@ public class GetShopsHandler(IApplicationDbContext dbContext, OpeninaryConfig co
         var items = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .ProjectToShop(config.BaseUrl)
+            .ProjectToShop(configOptions.Value.BaseUrl)
             .ToListAsync(ct);
 
         return new PaginatedList<ShopDto>(items, totalCount, request.PageNumber, request.PageSize);

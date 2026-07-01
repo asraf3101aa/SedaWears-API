@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Features.Products.Commands;
 using SedaWears.Application.Features.Products.Models;
@@ -12,7 +11,6 @@ namespace SedaWears.Presentation.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Global))]
 public class ProductsController(ISender mediator) : ControllerBase
 {
     [HttpGet]
@@ -33,15 +31,15 @@ public class ProductsController(ISender mediator) : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> CreateProduct(UpsertProductRequest request, CancellationToken ct)
+    public async Task<IActionResult> CreateProduct(UpsertProductRequest? request, CancellationToken ct)
     {
         var command = new CreateProductCommand(
-            request.Name,
-            request.Description,
-            request.Price,
-            request.Gender,
-            request.CategoryId,
-            request.Images
+            request?.Name,
+            request?.Description,
+            request?.Price,
+            request?.Gender,
+            request?.CategoryId,
+            request?.Images
         );
 
         await mediator.Send(command, ct);
@@ -50,16 +48,16 @@ public class ProductsController(ISender mediator) : ControllerBase
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateProduct(int id, UpsertProductRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateProduct(int id, UpsertProductRequest? request, CancellationToken ct)
     {
         var command = new UpdateProductCommand(
             id,
-            request.Name,
-            request.Description,
-            request.Price,
-            request.Gender,
-            request.CategoryId,
-            request.Images
+            request?.Name,
+            request?.Description,
+            request?.Price,
+            request?.Gender,
+            request?.CategoryId,
+            request?.Images
         );
 
         await mediator.Send(command, ct);
@@ -68,11 +66,11 @@ public class ProductsController(ISender mediator) : ControllerBase
 
     [HttpPatch("{id:int}/sizes")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateProductSizes(int id, UpdateProductSizesRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateProductSizes(int id, UpdateProductSizesRequest? request, CancellationToken ct)
     {
         var command = new UpdateProductSizesCommand(
             id,
-            request.Sizes!.Select(s => new ProductSizeDto(s.Size!.Value, s.Stock!.Value)).ToList()
+            request?.Sizes?.Select(s => new ProductSizeDto(s.Size ?? 0, s.Stock ?? 0)).ToList()
         );
 
         await mediator.Send(command, ct);
@@ -89,10 +87,10 @@ public class ProductsController(ISender mediator) : ControllerBase
 
     [HttpPatch("{id:int}/status")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateProductStatus(int id, UpdateProductActiveStatusRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateProductStatus(int id, UpdateProductActiveStatusRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new UpdateProductActiveStatusCommand(id, request.IsActive!.Value), ct);
-        var status = request.IsActive!.Value ? "activated" : "deactivated";
+        await mediator.Send(new UpdateProductActiveStatusCommand(id, request?.IsActive), ct);
+        var status = (request?.IsActive ?? false) ? "activated" : "deactivated";
         return Ok(new { message = $"Product {status} successfully." });
     }
 }

@@ -25,10 +25,10 @@ public class DeleteCustomerHandler(
     public async Task Handle(DeleteCustomerCommand request, CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(request.Id.ToString())
-            ?? throw new NotFoundException("User not found.");
+            ?? throw new UserNotFoundException("User not found.");
 
         if (!await userManager.IsInRoleAsync(user, UserRole.Customer.ToString()))
-            throw new NotFoundException("Customer not found.");
+            throw new UserNotFoundException("Customer not found.");
 
         var result = await userManager.DeleteAsync(user);
         if (!result.Succeeded) throw new BadRequestException(result.Errors.First().Description);

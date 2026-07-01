@@ -33,9 +33,9 @@ public class UsersController(ISender mediator) : ControllerBase
 
     [HttpPost("admins/invite")]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<IActionResult> InviteAdmin([FromBody] InviteAdminRequest request)
+    public async Task<IActionResult> InviteAdmin([FromBody] InviteAdminRequest? request)
     {
-        await mediator.Send(new InviteAdminCommand(request.Email?.Trim()));
+        await mediator.Send(new InviteAdminCommand(request?.Email?.Trim()));
         return Ok(new { Message = "Invitation sent successfully." });
     }
 
@@ -55,12 +55,12 @@ public class UsersController(ISender mediator) : ControllerBase
 
     [HttpPatch("{id:int}")]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest request)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest? request)
     {
         await mediator.Send(new UpdateUserCommand(
             id,
-            request.FirstName?.Trim(),
-            request.LastName?.Trim()));
+            request?.FirstName?.Trim(),
+            request?.LastName?.Trim()));
         return Ok(new { message = "User updated successfully." });
     }
 

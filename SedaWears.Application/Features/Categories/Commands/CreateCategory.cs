@@ -41,7 +41,7 @@ public class CreateCategoryHandler(
         {
             var shop = await dbContext.Shops
                 .FirstOrDefaultAsync(s => s.Id == request.ShopId.Value, ct)
-                ?? throw new NotFoundException("Shop not found.");
+                ?? throw new ShopNotFoundException();
 
             if (!isAdmin)
             {
@@ -49,7 +49,7 @@ public class CreateCategoryHandler(
                                || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
 
                 if (!isMember)
-                    throw new NotFoundException("Shop not found.");
+                    throw new ShopNotFoundException();
             }
         }
         else if (!isAdmin)

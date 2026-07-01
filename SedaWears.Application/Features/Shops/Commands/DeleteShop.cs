@@ -12,7 +12,7 @@ public class DeleteShopHandler(IApplicationDbContext dbContext) : IRequestHandle
     public async Task Handle(DeleteShopCommand request, CancellationToken ct)
     {
         var shop = await dbContext.Shops
-            .FirstOrDefaultAsync(s => s.Id == request.Id, ct) ?? throw new NotFoundException("Shop not found");
+            .FirstOrDefaultAsync(s => s.Id == request.Id, ct) ?? throw new ShopNotFoundException();
 
         dbContext.Shops.Remove(shop);
         await dbContext.SaveChangesAsync(ct);

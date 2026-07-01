@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Interfaces;
@@ -21,7 +22,7 @@ public record GetShopMembersQuery(
 
 public class GetShopMembersValidator : PaginatedQueryValidator<GetShopMembersQuery> { }
 
-public class GetShopMembersHandler(IApplicationDbContext dbContext, OpeninaryConfig config)
+public class GetShopMembersHandler(IApplicationDbContext dbContext, IOptions<OpeninaryConfig> configOptions)
     : IRequestHandler<GetShopMembersQuery, PaginatedList<UserDto>>
 {
     public async Task<PaginatedList<UserDto>> Handle(GetShopMembersQuery request, CancellationToken ct)
@@ -54,7 +55,7 @@ public class GetShopMembersHandler(IApplicationDbContext dbContext, OpeninaryCon
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .Select(so => so.User)
-                .ProjectToUser(config.BaseUrl)
+                .ProjectToUser(configOptions.Value.BaseUrl)
                 .ToListAsync(ct);
 
             return new PaginatedList<UserDto>(items, total, request.PageNumber, request.PageSize);
@@ -84,7 +85,7 @@ public class GetShopMembersHandler(IApplicationDbContext dbContext, OpeninaryCon
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .Select(sm => sm.User)
-                .ProjectToUser(config.BaseUrl)
+                .ProjectToUser(configOptions.Value.BaseUrl)
                 .ToListAsync(ct);
 
             return new PaginatedList<UserDto>(items, total, request.PageNumber, request.PageSize);

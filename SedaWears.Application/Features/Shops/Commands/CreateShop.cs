@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace SedaWears.Application.Features.Shops.Commands;
 
 public record CreateShopCommand(
-    string Name,
-    string SubdomainSlug,
+    string? Name,
+    string? SubdomainSlug,
     string? Description,
     string? LogoFileName = null,
     string? BannerFileName = null) : IRequest;
@@ -60,8 +60,8 @@ public class CreateShopHandler(IApplicationDbContext dbContext) : IRequestHandle
     {
         var shop = new Shop
         {
-            Name = request.Name,
-            SubdomainSlug = request.SubdomainSlug,
+            Name = request.Name!,
+            SubdomainSlug = request.SubdomainSlug!,
             Description = request.Description,
             LogoFileName = request.LogoFileName,
             BannerFileName = request.BannerFileName

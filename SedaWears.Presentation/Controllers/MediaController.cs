@@ -12,9 +12,9 @@ namespace SedaWears.Presentation.Controllers;
 public class MediaController(ISender mediator) : ControllerBase
 {
     [HttpPost("upload-url")]
-    public async Task<ActionResult<List<FileUploadUrl>>> RequestUploadUrl([FromBody] FileS3UploadUrlRequest request)
+    public async Task<ActionResult<List<FileUploadUrl>>> RequestUploadUrl([FromBody] FileS3UploadUrlRequest? request)
     {
-        var result = await mediator.Send(new FileS3UploadUrlCommand(request.Files));
+        var result = await mediator.Send(new FileS3UploadUrlCommand(request?.Files));
         return Ok(result);
     }
 

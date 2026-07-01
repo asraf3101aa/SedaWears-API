@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
@@ -24,14 +25,14 @@ public class GetAdminInvitationDetailsValidator : AbstractValidator<GetAdminInvi
 
 public class GetAdminInvitationDetailsHandler(
     IApplicationDbContext dbContext,
-    AppConfig appConfig) : IRequestHandler<GetAdminInvitationDetailsQuery, InvitationDetailsResponse>
+    IOptions<AuthConfig> authConfigOptions) : IRequestHandler<GetAdminInvitationDetailsQuery, InvitationDetailsResponse>
 {
     public async Task<InvitationDetailsResponse> Handle(GetAdminInvitationDetailsQuery request, CancellationToken ct)
     {
         var invitation = await dbContext.InvitedAdmins
             .FirstOrDefaultAsync(ia => ia.Email == request.Email && ia.Token == request.Token, ct);
 
-        if (invitation == null || invitation.CreatedAt.AddHours(appConfig.AdminInvitationExpiry) < System.DateTime.UtcNow)
+        if (invitation == null || invitation.CreatedAt.AddHours(authConfigOptions.Value.AdminInvitationExpiry) < DateTime.UtcNow)
         {
             return new InvitationDetailsResponse(IsValid: false, UserExists: false);
         }

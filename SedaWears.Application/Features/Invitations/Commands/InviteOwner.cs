@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Settings;
@@ -30,12 +31,12 @@ public class InviteOwnerValidator : AbstractValidator<InviteOwnerCommand>
 public class InviteOwnerHandler(
     IApplicationDbContext dbContext,
     IEmailService emailService,
-    AppConfig appConfig) : IRequestHandler<InviteOwnerCommand>
+    IOptions<HostUrlsConfig> hostUrlsConfigOptions) : IRequestHandler<InviteOwnerCommand>
 {
     public async Task Handle(InviteOwnerCommand request, CancellationToken ct)
     {
         var shop = await dbContext.Shops.AsNoTracking().FirstOrDefaultAsync(s => s.Id == request.ShopId, ct)
-            ?? throw new NotFoundException("Shop not found.");
+            ?? throw new ShopNotFoundException();
 
         var isOwner = await dbContext.ShopOwners
             .AnyAsync(so => so.ShopId == request.ShopId && so.User.Email == request.Email, ct);
@@ -61,7 +62,7 @@ public class InviteOwnerHandler(
         dbContext.InvitedShopOwners.Add(invitation);
         await dbContext.SaveChangesAsync(ct);
 
-        var url = $"{appConfig.OwnerFrontendUrl}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
+        var url = $"{hostUrlsConfigOptions.Value.Owner}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
 
         await emailService.SendEmailAsync(
             invitation.Email,
@@ -118,14 +119,14 @@ public class AcceptShopOwnerInvitationValidator : AbstractValidator<AcceptShopOw
 public class AcceptShopOwnerInvitationHandler(
     UserManager<User> userManager,
     IApplicationDbContext dbContext,
-    AppConfig appConfig) : IRequestHandler<AcceptShopOwnerInvitationCommand>
+    IOptions<AuthConfig> authConfigOptions) : IRequestHandler<AcceptShopOwnerInvitationCommand>
 {
     public async Task Handle(AcceptShopOwnerInvitationCommand request, CancellationToken ct)
     {
         var invitedOwner = await dbContext.InvitedShopOwners
             .FirstOrDefaultAsync(iso => iso.ShopId == request.ShopId && iso.Email == request.Email && iso.Token == request.Token, ct);
 
-        if (invitedOwner == null || invitedOwner.CreatedAt.AddHours(appConfig.OwnerInvitationExpiry) < DateTime.UtcNow)
+        if (invitedOwner == null || invitedOwner.CreatedAt.AddHours(authConfigOptions.Value.OwnerInvitationExpiry) < DateTime.UtcNow)
         {
             throw new BadRequestException("Invalid or expired invitation token or email.");
         }
@@ -185,18 +186,18 @@ public class ResendShopOwnerInvitationValidator : AbstractValidator<ResendShopOw
 public class ResendShopOwnerInvitationHandler(
     IApplicationDbContext dbContext,
     IEmailService emailService,
-    AppConfig appConfig) : IRequestHandler<ResendShopOwnerInvitationCommand>
+    IOptions<HostUrlsConfig> hostUrlsConfigOptions) : IRequestHandler<ResendShopOwnerInvitationCommand>
 {
     public async Task Handle(ResendShopOwnerInvitationCommand request, CancellationToken ct)
     {
         var shop = await dbContext.Shops
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == request.ShopId, ct)
-            ?? throw new NotFoundException("Shop not found.");
+            ?? throw new ShopNotFoundException();
 
         var invitation = await dbContext.InvitedShopOwners
             .FirstOrDefaultAsync(iso => iso.ShopId == request.ShopId && iso.Id == request.InvitationId, ct)
-            ?? throw new NotFoundException("Shop owner invitation not found.");
+            ?? throw new InvitationNotFoundException("Shop owner invitation not found.");
 
         var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
         invitation.Token = token;
@@ -204,7 +205,7 @@ public class ResendShopOwnerInvitationHandler(
 
         await dbContext.SaveChangesAsync(ct);
 
-        var url = $"{appConfig.OwnerFrontendUrl}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
+        var url = $"{hostUrlsConfigOptions.Value.Owner}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
 
         var subject = $"SedaWears Shop Owner Invitation for {shop.Name}";
         var body = $"<p>You have been invited as a Shop Owner for <b>{shop.Name}</b> on SedaWears.</p><p>Click <a href='{url}'>here</a> to accept the invitation and set your password.</p>";

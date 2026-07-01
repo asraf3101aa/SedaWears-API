@@ -6,7 +6,7 @@ using FluentValidation;
 namespace SedaWears.Application.Features.Media.Commands;
 
 
-public record FileS3UploadUrlCommand(List<FileMeta> Files) : IRequest<List<FileUploadUrl>>;
+public record FileS3UploadUrlCommand(List<FileMeta>? Files) : IRequest<List<FileUploadUrl>>;
 
 public class FileS3UploadUrlValidator : AbstractValidator<FileS3UploadUrlCommand>
 {
@@ -31,7 +31,7 @@ public class FileS3UploadUrlHandler(IS3Service s3Service) : IRequestHandler<File
 {
     public Task<List<FileUploadUrl>> Handle(FileS3UploadUrlCommand request, CancellationToken cancellationToken)
     {
-        var responses = request.Files.Select(file =>
+        var responses = request.Files!.Select(file =>
         {
             var url = s3Service.GetPreSignedUrl(file.ContentType, file.FileName);
             return new FileUploadUrl(file.FileName, url.ToString());

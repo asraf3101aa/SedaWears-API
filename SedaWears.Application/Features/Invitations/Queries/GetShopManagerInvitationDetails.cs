@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Features.Invitations.Models;
@@ -27,14 +28,14 @@ public class GetShopManagerInvitationDetailsValidator : AbstractValidator<GetSho
 
 public class GetShopManagerInvitationDetailsHandler(
     IApplicationDbContext dbContext,
-    AppConfig appConfig) : IRequestHandler<GetShopManagerInvitationDetailsQuery, InvitationDetailsResponse>
+    IOptions<AuthConfig> authConfigOptions) : IRequestHandler<GetShopManagerInvitationDetailsQuery, InvitationDetailsResponse>
 {
     public async Task<InvitationDetailsResponse> Handle(GetShopManagerInvitationDetailsQuery request, CancellationToken ct)
     {
         var invitation = await dbContext.InvitedShopManagers
             .FirstOrDefaultAsync(ism => ism.ShopId == request.ShopId && ism.Email == request.Email && ism.Token == request.Token, ct);
 
-        if (invitation == null || invitation.CreatedAt.AddHours(appConfig.ManagerInvitationExpiry) < DateTime.UtcNow)
+        if (invitation == null || invitation.CreatedAt.AddHours(authConfigOptions.Value.ManagerInvitationExpiry) < DateTime.UtcNow)
         {
             return new InvitationDetailsResponse(IsValid: false, UserExists: false);
         }

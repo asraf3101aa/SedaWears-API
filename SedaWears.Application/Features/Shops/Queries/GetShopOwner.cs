@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Interfaces;
@@ -10,7 +11,7 @@ namespace SedaWears.Application.Features.Shops.Queries;
 
 public record GetShopOwnerQuery(int ShopId, int UserId) : IRequest<UserDto>;
 
-public class GetShopOwnerHandler(IApplicationDbContext dbContext, OpeninaryConfig config)
+public class GetShopOwnerHandler(IApplicationDbContext dbContext, IOptions<OpeninaryConfig> configOptions)
     : IRequestHandler<GetShopOwnerQuery, UserDto>
 {
     public async Task<UserDto> Handle(GetShopOwnerQuery request, CancellationToken ct)
@@ -19,7 +20,7 @@ public class GetShopOwnerHandler(IApplicationDbContext dbContext, OpeninaryConfi
             .AsNoTracking()
             .Where(so => so.ShopId == request.ShopId && so.UserId == request.UserId)
             .Select(so => so.User)
-            .ProjectToUser(config.BaseUrl)
-            .FirstOrDefaultAsync(ct) ?? throw new NotFoundException("Shop owner not found.");
+            .ProjectToUser(configOptions.Value.BaseUrl)
+            .FirstOrDefaultAsync(ct) ?? throw new ShopNotFoundException();
     }
 }

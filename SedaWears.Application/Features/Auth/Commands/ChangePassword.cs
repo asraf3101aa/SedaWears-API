@@ -29,7 +29,7 @@ public class ChangePasswordHandler(UserManager<User> userManager, ICurrentUser c
     public async Task Handle(ChangePasswordCommand request, CancellationToken ct)
     {
         var userId = currentUser.Id!.Value;
-        var user = await userManager.FindByIdAsync(userId.ToString()) ?? throw new NotFoundException("User not found.");
+        var user = await userManager.FindByIdAsync(userId.ToString()) ?? throw new UserNotFoundException("User not found.");
         var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded) throw new BadRequestException(result.Errors.First().Description);
     }

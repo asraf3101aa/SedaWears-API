@@ -13,7 +13,7 @@ public class RemoveCartItemHandler(IApplicationDbContext context, ICurrentUser c
     {
         var userId = currentUser.Id;
         var item = await context.CartItems.FirstOrDefaultAsync(c => c.Id == request.ItemId && c.UserId == userId, ct)
-            ?? throw new NotFoundException("Cart item not found");
+            ?? throw new CartItemNotFoundException();
 
         context.CartItems.Remove(item);
         await context.SaveChangesAsync(ct);

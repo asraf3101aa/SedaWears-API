@@ -78,7 +78,7 @@ public class CreatePromoCodeHandler(
         {
             var shopExists = await dbContext.Shops.AnyAsync(s => s.Id == request.ShopId.Value, ct);
             if (!shopExists)
-                throw new NotFoundException("Shop not found.");
+                throw new ShopNotFoundException();
 
             if (!isAdmin)
             {

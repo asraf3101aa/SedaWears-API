@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
@@ -27,14 +28,14 @@ public class GetShopOwnerInvitationDetailsValidator : AbstractValidator<GetShopO
 
 public class GetShopOwnerInvitationDetailsHandler(
     IApplicationDbContext dbContext,
-    AppConfig appConfig) : IRequestHandler<GetShopOwnerInvitationDetailsQuery, InvitationDetailsResponse>
+    IOptions<AuthConfig> authConfigOptions) : IRequestHandler<GetShopOwnerInvitationDetailsQuery, InvitationDetailsResponse>
 {
     public async Task<InvitationDetailsResponse> Handle(GetShopOwnerInvitationDetailsQuery request, CancellationToken ct)
     {
         var invitation = await dbContext.InvitedShopOwners
             .FirstOrDefaultAsync(iso => iso.ShopId == request.ShopId && iso.Email == request.Email && iso.Token == request.Token, ct);
 
-        if (invitation == null || invitation.CreatedAt.AddHours(appConfig.OwnerInvitationExpiry) < DateTime.UtcNow)
+        if (invitation == null || invitation.CreatedAt.AddHours(authConfigOptions.Value.OwnerInvitationExpiry) < DateTime.UtcNow)
         {
             return new InvitationDetailsResponse(IsValid: false, UserExists: false);
         }

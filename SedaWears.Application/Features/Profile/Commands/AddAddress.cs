@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Domain.Entities;
+using SedaWears.Application.Common;
 using FluentValidation;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Profile.Commands;
 
@@ -32,7 +34,7 @@ public class AddAddressCommandValidator : AbstractValidator<AddAddressCommand>
     }
 }
 
-public class AddAddressCommandHandler(IApplicationDbContext dbContext, ICurrentUser currentUser) :
+public class AddAddressCommandHandler(IApplicationDbContext dbContext, ICurrentUser currentUser, IFusionCache fusionCache) :
     IRequestHandler<AddAddressCommand, AddressDto>
 {
     public async Task<AddressDto> Handle(AddAddressCommand request, CancellationToken cancellationToken)
@@ -54,6 +56,8 @@ public class AddAddressCommandHandler(IApplicationDbContext dbContext, ICurrentU
 
         user.Addresses.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await fusionCache.RemoveAsync(CacheKeys.ProfileAddresses(userId), token: cancellationToken);
 
         return new AddressDto(entity.Id, entity.Label, entity.FullName, entity.Email, entity.Phone, entity.Street, entity.City, entity.ZipCode);
     }

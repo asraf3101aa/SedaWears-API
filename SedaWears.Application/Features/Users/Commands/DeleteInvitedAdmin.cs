@@ -14,7 +14,7 @@ public class DeleteInvitedAdminHandler(
     {
         var invitation = await dbContext.InvitedAdmins
             .FirstOrDefaultAsync(ia => ia.Id == request.Id, ct)
-            ?? throw new NotFoundException("Admin invitation not found.");
+            ?? throw new InvitationNotFoundException("Admin invitation not found.");
 
         dbContext.InvitedAdmins.Remove(invitation);
         await dbContext.SaveChangesAsync(ct);

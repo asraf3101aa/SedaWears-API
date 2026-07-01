@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Models;
 using SedaWears.Application.Features.Users.Models;
@@ -15,7 +16,7 @@ public class UserService(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
     UserManager<User> userManager,
-    OpeninaryConfig config) : IUserService
+    IOptions<OpeninaryConfig> configOptions) : IUserService
 {
     public async Task<PaginatedList<UserDto>> GetUsersByRoleAsync(
         UserRole role,
@@ -48,7 +49,7 @@ public class UserService(
 
         var total = await query.CountAsync(ct);
         var items = await query
-            .ProjectToUser(config.BaseUrl)
+            .ProjectToUser(configOptions.Value.BaseUrl)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
@@ -85,7 +86,7 @@ public class UserService(
         var total = await query.CountAsync(ct);
         var items = await query
             .Select(sm => sm.User)
-            .ProjectToUser(config.BaseUrl)
+            .ProjectToUser(configOptions.Value.BaseUrl)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
@@ -102,7 +103,7 @@ public class UserService(
         return await userManager.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .ProjectToUser(config.BaseUrl)
+            .ProjectToUser(configOptions.Value.BaseUrl)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException("User not found.");
     }

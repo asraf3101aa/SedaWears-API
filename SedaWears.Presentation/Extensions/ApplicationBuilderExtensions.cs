@@ -31,8 +31,7 @@ public static class ApplicationBuilderExtensions
 
         app.UseExceptionHandler();
 
-        app.UseCors("Default");
-        app.UseRateLimiter();
+        app.UseCors();
 
         app.UseAuthentication();
 

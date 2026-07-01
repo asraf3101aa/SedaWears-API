@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Features.Shops.Models;
 using SedaWears.Application.Features.Shops.Queries;
@@ -13,14 +12,13 @@ namespace SedaWears.Presentation.Controllers.Shop;
 
 [ApiController]
 [Route("shops/{shopId:int}/[controller]")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Global))]
 public class ManagersController(ISender mediator) : ControllerBase
 {
     [HttpPost]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)}")]
-    public async Task<IActionResult> InviteShopManager(int shopId, [FromBody] ShopMemberInviteRequest request)
+    public async Task<IActionResult> InviteShopManager(int shopId, [FromBody] ShopMemberInviteRequest? request)
     {
-        await mediator.Send(new InviteManagerCommand(shopId, request.Email?.Trim()));
+        await mediator.Send(new InviteManagerCommand(shopId, request?.Email?.Trim()));
         return Ok(new { message = "Manager invited successfully." });
     }
 
@@ -49,13 +47,13 @@ public class ManagersController(ISender mediator) : ControllerBase
 
     [HttpPatch("{managerId:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateShopManager([FromRoute] int shopId, [FromRoute] int managerId, [FromBody] UpdateShopMemberRequest request)
+    public async Task<IActionResult> UpdateShopManager([FromRoute] int shopId, [FromRoute] int managerId, [FromBody] UpdateShopMemberRequest? request)
     {
         await mediator.Send(new UpdateShopMemberCommand(
             shopId,
             managerId,
-            request.FirstName?.Trim() ?? string.Empty,
-            request.LastName?.Trim() ?? string.Empty));
+            request?.FirstName?.Trim() ?? string.Empty,
+            request?.LastName?.Trim() ?? string.Empty));
         return Ok(new { message = "Manager updated successfully." });
     }
 

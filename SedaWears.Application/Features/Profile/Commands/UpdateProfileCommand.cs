@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Domain.Entities;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Profile.Commands;
 
@@ -32,7 +33,8 @@ public class UpdateProfileCommandHandler(
     IApplicationDbContext dbContext,
     UserManager<User> userManager,
     IOriginContext originContext,
-    ICurrentUser currentUser) : IRequestHandler<UpdateProfileCommand>
+    ICurrentUser currentUser,
+    IFusionCache fusionCache) : IRequestHandler<UpdateProfileCommand>
 {
     public async Task Handle(UpdateProfileCommand request, CancellationToken cancellationToken)
     {
@@ -55,7 +57,9 @@ public class UpdateProfileCommandHandler(
 
         if (rowsAffected == 0)
         {
-            throw new NotFoundException("User not found.");
+            throw new UserNotFoundException("User not found.");
         }
+
+        await fusionCache.RemoveAsync($"profile-{userId}", token: cancellationToken);
     }
 }

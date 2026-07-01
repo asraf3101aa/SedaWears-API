@@ -6,9 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace SedaWears.Infrastructure.Services;
 
-public class GoogleAuthService(GoogleConfig googleConfig) : IGoogleAuthService
+public class GoogleAuthService(IOptions<GoogleConfig> googleConfigOptions) : IGoogleAuthService
 {
-    private readonly GoogleConfig _googleConfig = googleConfig;
+    private readonly GoogleConfig _googleConfig = googleConfigOptions.Value;
 
     public async Task<GoogleUser?> ValidateTokenAsync(string idToken)
     {

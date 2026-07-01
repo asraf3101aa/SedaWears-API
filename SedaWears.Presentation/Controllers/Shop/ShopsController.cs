@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Features.Shops.Models;
 using SedaWears.Application.Features.Shops.Queries;
@@ -12,7 +11,6 @@ namespace SedaWears.Presentation.Controllers.Shop;
 
 [ApiController]
 [Route("[controller]")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Global))]
 public class ShopsController(ISender mediator) : ControllerBase
 {
     [HttpGet]
@@ -32,31 +30,31 @@ public class ShopsController(ISender mediator) : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<IActionResult> Create(UpsertShopRequest request)
+    public async Task<IActionResult> Create(UpsertShopRequest? request)
     {
         await mediator.Send(new CreateShopCommand(
-            request.Name,
-            request.SubdomainSlug,
-            request.Description,
-            request.LogoFileName,
-            request.BannerFileName));
+            request?.Name,
+            request?.SubdomainSlug,
+            request?.Description,
+            request?.LogoFileName,
+            request?.BannerFileName));
         return Ok(new { message = "Shop created successfully." });
     }
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateShop(int id, UpsertShopRequest request)
+    public async Task<IActionResult> UpdateShop(int id, UpsertShopRequest? request)
     {
-        await mediator.Send(new UpdateShopCommand(id, request.Name, request.SubdomainSlug, request.Description, request.LogoFileName, request.BannerFileName));
+        await mediator.Send(new UpdateShopCommand(id, request?.Name, request?.SubdomainSlug, request?.Description, request?.LogoFileName, request?.BannerFileName));
         return Ok(new { message = "Shop updated successfully." });
     }
 
     [HttpPatch("{id:int}/status")]
     [Authorize(Roles = nameof(UserRole.Admin))]
-    public async Task<IActionResult> UpdateShopStatus(int id, UpdateShopActiveStatusRequest request)
+    public async Task<IActionResult> UpdateShopStatus(int id, UpdateShopActiveStatusRequest? request)
     {
-        await mediator.Send(new UpdateShopActiveStatusCommand(id, request.IsActive));
-        var status = request.IsActive ? "activated" : "deactivated";
+        await mediator.Send(new UpdateShopActiveStatusCommand(id, request?.IsActive));
+        var status = (request?.IsActive ?? false) ? "activated" : "deactivated";
         return Ok(new { message = $"Shop {status} successfully." });
     }
 

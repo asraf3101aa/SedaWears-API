@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Features.Invitations.Commands;
 using SedaWears.Application.Features.Invitations.Queries;
 using SedaWears.Application.Features.Auth.Models;
@@ -11,46 +10,45 @@ namespace SedaWears.Presentation.Controllers;
 
 [ApiController]
 [Route("invitations")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Auth))]
 public class InvitationsController(ISender mediator) : ControllerBase
 {
     [HttpPost("accept-owner")]
-    public async Task<IActionResult> AcceptShopOwnerInvitation(AcceptShopMemberInvitationRequest request)
+    public async Task<IActionResult> AcceptShopOwnerInvitation(AcceptShopMemberInvitationRequest? request)
     {
         await mediator.Send(new AcceptShopOwnerInvitationCommand(
-            request.ShopId,
-            request.Email?.Trim(),
-            request.Token?.Trim(),
-            request.FirstName?.Trim(),
-            request.LastName?.Trim(),
-            request.Password));
+            request?.ShopId,
+            request?.Email?.Trim(),
+            request?.Token?.Trim(),
+            request?.FirstName?.Trim(),
+            request?.LastName?.Trim(),
+            request?.Password));
 
         return Ok(new { Message = "Invitation accepted successfully. You can now login with your credentials." });
     }
 
     [HttpPost("accept-manager")]
-    public async Task<IActionResult> AcceptShopManagerInvitation(AcceptShopMemberInvitationRequest request)
+    public async Task<IActionResult> AcceptShopManagerInvitation(AcceptShopMemberInvitationRequest? request)
     {
         await mediator.Send(new AcceptShopManagerInvitationCommand(
-            request.ShopId,
-            request.Email?.Trim(),
-            request.Token?.Trim(),
-            request.FirstName?.Trim(),
-            request.LastName?.Trim(),
-            request.Password));
+            request?.ShopId,
+            request?.Email?.Trim(),
+            request?.Token?.Trim(),
+            request?.FirstName?.Trim(),
+            request?.LastName?.Trim(),
+            request?.Password));
 
         return Ok(new { Message = "Invitation accepted successfully. You can now login with your credentials." });
     }
 
     [HttpPost("accept-admin")]
-    public async Task<IActionResult> AcceptAdminInvitation(AcceptAdminInvitationRequest request)
+    public async Task<IActionResult> AcceptAdminInvitation(AcceptAdminInvitationRequest? request)
     {
         await mediator.Send(new AcceptAdminInvitationCommand(
-            request.Email?.Trim(),
-            request.Token?.Trim(),
-            request.FirstName?.Trim(),
-            request.LastName?.Trim(),
-            request.Password));
+            request?.Email?.Trim(),
+            request?.Token?.Trim(),
+            request?.FirstName?.Trim(),
+            request?.LastName?.Trim(),
+            request?.Password));
 
         return Ok(new { Message = "Invitation accepted successfully. You can now login with your credentials." });
     }

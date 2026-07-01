@@ -68,7 +68,7 @@ public class UpdatePromoCodeHandler(
     {
         var promoCode = await dbContext.PromoCodes
             .FirstOrDefaultAsync(p => p.Id == request.Id, ct)
-            ?? throw new NotFoundException("Promo code not found.");
+            ?? throw new PromoCodeNotFoundException();
 
         var user = currentUser.Id.HasValue ? await userManager.FindByIdAsync(currentUser.Id.Value.ToString()) : null;
         var isAdmin = user != null && await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));

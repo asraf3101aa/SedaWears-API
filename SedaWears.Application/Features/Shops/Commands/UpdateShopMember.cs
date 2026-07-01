@@ -25,7 +25,7 @@ public class UpdateShopMemberHandler(IApplicationDbContext dbContext) : IRequest
         }
 
         if (user == null)
-            throw new NotFoundException("Shop member not found.");
+            throw new ShopNotFoundException();
 
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;

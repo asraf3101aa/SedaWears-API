@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Entities;
+using SedaWears.Application.Common;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Products.Commands;
 
@@ -50,20 +52,20 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
     }
 }
 
-public class UpdateProductHandler(IApplicationDbContext dbContext) : IRequestHandler<UpdateProductCommand>
+public class UpdateProductHandler(IApplicationDbContext dbContext, IFusionCache fusionCache) : IRequestHandler<UpdateProductCommand>
 {
     public async Task Handle(UpdateProductCommand request, CancellationToken ct)
     {
         var product = await dbContext.Products
             .Include(p => p.Images)
             .Include(p => p.Category)
-            .FirstOrDefaultAsync(p => p.Id == request.Id!.Value, ct) ?? throw new NotFoundException("Product not found");
+            .FirstOrDefaultAsync(p => p.Id == request.Id!.Value, ct) ?? throw new ProductNotFoundException();
 
         if (request.ShopId.HasValue)
         {
             if (product.Category.ShopId != request.ShopId)
             {
-                throw new NotFoundException("Product not found.");
+                throw new ProductNotFoundException();
             }
 
             var categoryExists = await dbContext.Categories
@@ -71,7 +73,7 @@ public class UpdateProductHandler(IApplicationDbContext dbContext) : IRequestHan
 
             if (!categoryExists)
             {
-                throw new NotFoundException("Category not found.");
+                throw new CategoryNotFoundException();
             }
         }
 
@@ -91,5 +93,6 @@ public class UpdateProductHandler(IApplicationDbContext dbContext) : IRequestHan
         }
 
         await dbContext.SaveChangesAsync(ct);
+        await fusionCache.RemoveAsync(CacheKeys.Product(request.Id!.Value), token: ct);
     }
 }

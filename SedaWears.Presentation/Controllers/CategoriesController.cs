@@ -5,15 +5,12 @@ using SedaWears.Application.Features.Categories.Commands;
 using SedaWears.Application.Features.Categories.Models;
 using SedaWears.Application.Features.Categories.Queries;
 using SedaWears.Domain.Enums;
-using Microsoft.AspNetCore.RateLimiting;
-using SedaWears.Application.Common.Settings;
 
 namespace SedaWears.Presentation.Controllers;
 
 [ApiController]
 [Route("[controller]")]
 [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Global))]
 public class CategoriesController(ISender mediator) : ControllerBase
 {
     [HttpGet]
@@ -30,16 +27,16 @@ public class CategoriesController(ISender mediator) : ControllerBase
 
 
     [HttpPost]
-    public async Task<IActionResult> CreateCategory(UpsertCategoryRequest request, CancellationToken ct)
+    public async Task<IActionResult> CreateCategory(UpsertCategoryRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new CreateCategoryCommand(request.Name ?? string.Empty, request.Description, request.ShopId), ct);
+        await mediator.Send(new CreateCategoryCommand(request?.Name ?? string.Empty, request?.Description, request?.ShopId), ct);
         return Ok(new { message = "Category created successfully." });
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateCategory(int id, UpsertCategoryRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateCategory(int id, UpsertCategoryRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new UpdateCategoryCommand(id, request.Name ?? string.Empty, request.Description, request.ShopId), ct);
+        await mediator.Send(new UpdateCategoryCommand(id, request?.Name ?? string.Empty, request?.Description, request?.ShopId), ct);
         return Ok(new { message = "Category updated successfully." });
     }
 
@@ -52,18 +49,18 @@ public class CategoriesController(ISender mediator) : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
-    public async Task<IActionResult> UpdateCategoryStatus(int id, UpdateCategoryActiveStatusRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateCategoryStatus(int id, [FromBody] UpdateCategoryActiveStatusRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new UpdateCategoryActiveStatusCommand(id, request.IsActive!.Value, request.ShopId), ct);
-        var status = request.IsActive!.Value ? "activated" : "deactivated";
+        await mediator.Send(new UpdateCategoryActiveStatusCommand(id, request?.IsActive), ct);
+        var status = (request?.IsActive ?? false) ? "activated" : "deactivated";
         return Ok(new { message = $"Category {status} successfully." });
     }
 
     [HttpPost("reorder")]
-    public async Task<IActionResult> ReorderCategories(ReorderCategoriesRequest request, CancellationToken ct)
+    public async Task<IActionResult> ReorderCategories(ReorderCategoriesRequest? request, CancellationToken ct)
     {
-        var commandOrders = request.Orders!.Select(o => new ReorderCategoryItem(o.Id!.Value, o.DisplayOrder!.Value)).ToList();
-        await mediator.Send(new ReorderCategoriesCommand(commandOrders, request.ShopId), ct);
+        var commandOrders = request?.Orders!.Select(o => new ReorderCategoryItem(o.Id!.Value, o.DisplayOrder!.Value)).ToList();
+        await mediator.Send(new ReorderCategoriesCommand(commandOrders, request?.ShopId), ct);
         return Ok(new { message = "Categories reordered successfully." });
     }
 }

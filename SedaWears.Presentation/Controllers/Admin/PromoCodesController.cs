@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 using SedaWears.Application.Features.PromoCodes.Commands;
 using SedaWears.Application.Features.PromoCodes.Queries;
 using SedaWears.Domain.Enums;

@@ -7,7 +7,7 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Cart.Commands;
 
-public record AddToCartCommand(int ProductId, ProductSize Size, int Quantity) : ICommand;
+public record AddToCartCommand(int ProductId, ProductSize? Size, int? Quantity) : ICommand;
 
 public class AddToCartHandler(IApplicationDbContext context, ICurrentUser currentUser) : ICommandHandler<AddToCartCommand>
 {
@@ -15,14 +15,14 @@ public class AddToCartHandler(IApplicationDbContext context, ICurrentUser curren
     {
         var userId = currentUser.Id!.Value;
         var productExists = await context.Products.AnyAsync(p => p.Id == request.ProductId, ct);
-        if (!productExists) throw new NotFoundException("Product not found");
+        if (!productExists) throw new ProductNotFoundException();
 
         var existing = await context.CartItems
             .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == request.ProductId && c.Size == request.Size, ct);
 
         if (existing != null)
         {
-            existing.Quantity += request.Quantity;
+            existing.Quantity += request.Quantity!.Value;
         }
         else
         {
@@ -30,8 +30,8 @@ public class AddToCartHandler(IApplicationDbContext context, ICurrentUser curren
             {
                 UserId = userId,
                 ProductId = request.ProductId,
-                Size = request.Size,
-                Quantity = request.Quantity
+                Size = request.Size!.Value,
+                Quantity = request.Quantity!.Value
             });
         }
 

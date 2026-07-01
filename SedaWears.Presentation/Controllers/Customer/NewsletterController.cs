@@ -13,9 +13,9 @@ public record UnsubscribeConfirmationRequest(string? Token);
 public class NewsletterController(ISender mediator) : ControllerBase
 {
     [HttpPost("subscribe")]
-    public async Task<IActionResult> Subscribe([FromBody] NewsletterRequest request)
+    public async Task<IActionResult> Subscribe([FromBody] NewsletterRequest? request)
     {
-        await mediator.Send(new SubscribeCommand(request.Email ?? string.Empty));
+        await mediator.Send(new SubscribeCommand(request?.Email ?? string.Empty));
         return Ok("Thank you for subscribing to Luga Store updates!");
     }
 
@@ -28,16 +28,16 @@ public class NewsletterController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("confirm-unsubscribe")]
-    public async Task<IActionResult> ConfirmUnsubscribe([FromBody] UnsubscribeConfirmationRequest request)
+    public async Task<IActionResult> ConfirmUnsubscribe([FromBody] UnsubscribeConfirmationRequest? request)
     {
-        await mediator.Send(new ConfirmUnsubscribeCommand(request.Token ?? string.Empty));
+        await mediator.Send(new ConfirmUnsubscribeCommand(request?.Token ?? string.Empty));
         return Ok("You have been successfully unsubscribed.");
     }
 
     [HttpPost("unsubscribe")]
-    public async Task<IActionResult> Unsubscribe([FromBody] NewsletterRequest request)
+    public async Task<IActionResult> Unsubscribe([FromBody] NewsletterRequest? request)
     {
-        await mediator.Send(new UnsubscribeCommand(request.Email ?? string.Empty));
+        await mediator.Send(new UnsubscribeCommand(request?.Email ?? string.Empty));
         return Ok("You have been unsubscribed.");
     }
 }

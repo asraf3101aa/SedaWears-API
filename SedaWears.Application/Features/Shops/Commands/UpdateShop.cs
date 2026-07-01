@@ -8,8 +8,8 @@ namespace SedaWears.Application.Features.Shops.Commands;
 
 public record UpdateShopCommand(
     int Id,
-    string Name,
-    string SubdomainSlug,
+    string? Name,
+    string? SubdomainSlug,
     string? Description,
     string? LogoFileName = null,
     string? BannerFileName = null) : IRequest;
@@ -60,10 +60,10 @@ public class UpdateShopHandler(IApplicationDbContext dbContext) : IRequestHandle
     public async Task Handle(UpdateShopCommand request, CancellationToken ct)
     {
         var shop = await dbContext.Shops
-            .FirstOrDefaultAsync(s => s.Id == request.Id, ct) ?? throw new NotFoundException("Shop not found");
+            .FirstOrDefaultAsync(s => s.Id == request.Id, ct) ?? throw new ShopNotFoundException();
 
-        shop.Name = request.Name;
-        shop.SubdomainSlug = request.SubdomainSlug;
+        shop.Name = request.Name!;
+        shop.SubdomainSlug = request.SubdomainSlug!;
         shop.Description = request.Description;
         shop.LogoFileName = request.LogoFileName ?? shop.LogoFileName;
         shop.BannerFileName = request.BannerFileName ?? shop.BannerFileName;

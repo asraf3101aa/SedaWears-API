@@ -30,7 +30,7 @@ public class DeleteCategoryHandler(
                 .AnyAsync(s => s.Id == request.ShopId.Value, ct);
 
             if (!shopExists)
-                throw new NotFoundException("Shop not found.");
+                throw new ShopNotFoundException();
 
             if (!isAdmin)
             {
@@ -38,7 +38,7 @@ public class DeleteCategoryHandler(
                                || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
 
                 if (!isMember)
-                    throw new NotFoundException("Shop not found.");
+                    throw new ShopNotFoundException();
             }
         }
         else if (!isAdmin)
@@ -51,6 +51,6 @@ public class DeleteCategoryHandler(
             .ExecuteDeleteAsync(ct);
 
         if (deletedRowsCount == 0)
-            throw new NotFoundException("Category not found.");
+            throw new CategoryNotFoundException();
     }
 }

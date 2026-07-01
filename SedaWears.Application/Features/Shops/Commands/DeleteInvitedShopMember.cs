@@ -16,7 +16,7 @@ public class DeleteInvitedShopMemberHandler(IApplicationDbContext dbContext) : I
         {
             var invitation = await dbContext.InvitedShopOwners
                 .FirstOrDefaultAsync(iso => iso.ShopId == request.ShopId && iso.Id == request.InvitationId, ct)
-                ?? throw new NotFoundException("Shop owner invitation not found.");
+                ?? throw new InvitationNotFoundException("Shop owner invitation not found.");
 
             dbContext.InvitedShopOwners.Remove(invitation);
         }
@@ -24,7 +24,7 @@ public class DeleteInvitedShopMemberHandler(IApplicationDbContext dbContext) : I
         {
             var invitation = await dbContext.InvitedShopManagers
                 .FirstOrDefaultAsync(ism => ism.ShopId == request.ShopId && ism.Id == request.InvitationId, ct)
-                ?? throw new NotFoundException("Shop manager invitation not found.");
+                ?? throw new InvitationNotFoundException("Shop manager invitation not found.");
 
             dbContext.InvitedShopManagers.Remove(invitation);
         }

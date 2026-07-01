@@ -146,7 +146,7 @@ public class CheckoutHandler(IApplicationDbContext context, ICurrentUser current
                 .Include(p => p.Category)
                 .FirstOrDefaultAsync(p => p.Id == productId, ct);
                 
-            if (product == null) throw new NotFoundException($"Product {productId} not found.");
+            if (product == null) throw new ProductNotFoundException();
 
             if (!shopIdSet && product.Category?.ShopId != null)
             {

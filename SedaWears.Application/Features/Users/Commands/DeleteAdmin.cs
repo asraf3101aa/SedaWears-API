@@ -24,10 +24,10 @@ public class DeleteAdminHandler(
     public async Task Handle(DeleteAdminCommand request, CancellationToken ct)
     {
         var user = await userManager.FindByIdAsync(request.Id.ToString())
-            ?? throw new NotFoundException("User not found.");
+            ?? throw new UserNotFoundException("User not found.");
 
         if (!await userManager.IsInRoleAsync(user, UserRole.Admin.ToString()))
-            throw new NotFoundException("Admin not found.");
+            throw new UserNotFoundException("Admin not found.");
 
         var result = await userManager.RemoveFromRoleAsync(user, UserRole.Admin.ToString());
         if (!result.Succeeded) throw new BadRequestException(result.Errors.First().Description);

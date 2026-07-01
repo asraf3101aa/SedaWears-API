@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
-public record UpdateCategoryActiveStatusCommand(int Id, bool IsActive, int? ShopId = null) : IRequest;
+public record UpdateCategoryActiveStatusCommand(int Id, bool? IsActive, int? ShopId = null) : IRequest;
 
 public class UpdateCategoryActiveStatusHandler(
     IApplicationDbContext dbContext,
@@ -26,7 +26,7 @@ public class UpdateCategoryActiveStatusHandler(
                 .AnyAsync(s => s.Id == request.ShopId.Value, ct);
 
             if (!shopExists)
-                throw new NotFoundException("Shop not found.");
+                throw new ShopNotFoundException();
 
             if (!isAdmin)
             {
@@ -34,7 +34,7 @@ public class UpdateCategoryActiveStatusHandler(
                                || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
 
                 if (!isMember)
-                    throw new NotFoundException("Shop not found.");
+                    throw new ShopNotFoundException();
             }
         }
         else if (!isAdmin)
@@ -44,9 +44,9 @@ public class UpdateCategoryActiveStatusHandler(
 
         var category = await dbContext.Categories
             .FirstOrDefaultAsync(c => c.Id == request.Id && c.ShopId == request.ShopId, ct)
-            ?? throw new NotFoundException("Category not found.");
+            ?? throw new CategoryNotFoundException();
 
-        category.IsActive = request.IsActive;
+        category.IsActive = request.IsActive!.Value;
         await dbContext.SaveChangesAsync(ct);
     }
 }

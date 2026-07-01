@@ -1,13 +1,15 @@
 using System.CommandLine;
+using SedaWears.Application;
+using SedaWears.Infrastructure;
+using SedaWears.Presentation;
 using SedaWears.Presentation.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Register Services
-builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddRateLimiting(builder.Configuration);
-builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
+builder.Services.AddApiServices();
 
 var app = builder.Build();
 

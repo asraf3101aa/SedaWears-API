@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using MediatR;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
@@ -26,7 +27,7 @@ public class ForgotPasswordHandler(
     UserManager<User> userManager,
     IEmailService emailService,
     IOriginContext originContext,
-    AppConfig appConfig) : IRequestHandler<ForgotPasswordCommand>
+    IOptions<HostUrlsConfig> hostUrlsConfigOptions) : IRequestHandler<ForgotPasswordCommand>
 {
     public async Task Handle(ForgotPasswordCommand request, CancellationToken ct)
     {
@@ -39,10 +40,10 @@ public class ForgotPasswordHandler(
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
         var frontendUrl = role switch
         {
-            UserRole.Admin => appConfig.AdminFrontendUrl,
-            UserRole.Manager => appConfig.ManagerFrontendUrl,
-            UserRole.Owner => appConfig.OwnerFrontendUrl,
-            _ => appConfig.CustomerFrontendUrl
+            UserRole.Admin => hostUrlsConfigOptions.Value.Admin,
+            UserRole.Manager => hostUrlsConfigOptions.Value.Manager,
+            UserRole.Owner => hostUrlsConfigOptions.Value.Owner,
+            _ => hostUrlsConfigOptions.Value.Customer
         };
         var url = $"{frontendUrl}/reset-password?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
 

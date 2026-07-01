@@ -6,7 +6,6 @@ using SedaWears.Application.Features.Cart.Commands;
 using SedaWears.Application.Features.Cart.Queries;
 using SedaWears.Domain.Enums;
 
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Common.Settings;
 
 namespace SedaWears.Presentation.Controllers.Customer;
@@ -14,7 +13,6 @@ namespace SedaWears.Presentation.Controllers.Customer;
 [ApiController]
 [Route("profile/cart")]
 [Authorize]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Global))]
 public class CartController(ISender mediator) : ControllerBase
 {
     [HttpGet]
@@ -22,16 +20,16 @@ public class CartController(ISender mediator) : ControllerBase
         => Ok(await mediator.Send(new GetCartQuery()));
 
     [HttpPost]
-    public async Task<IActionResult> AddToCart(AddToCartRequest request)
+    public async Task<IActionResult> AddToCart(AddToCartRequest? request)
     {
-        await mediator.Send(new AddToCartCommand(request.ProductId, request.Size, request.Quantity));
+        await mediator.Send(new AddToCartCommand(request?.ProductId ?? 0, request?.Size, request?.Quantity));
         return Ok();
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateItem(int id, UpdateCartRequest request)
+    public async Task<IActionResult> UpdateItem(int id, UpdateCartRequest? request)
     {
-        await mediator.Send(new UpdateCartItemCommand(id, request.Size, request.Quantity));
+        await mediator.Send(new UpdateCartItemCommand(id, request?.Size, request?.Quantity));
         return Ok();
     }
 

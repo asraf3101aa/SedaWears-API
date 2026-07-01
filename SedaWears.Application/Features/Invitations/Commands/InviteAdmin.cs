@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Settings;
@@ -28,7 +29,7 @@ public class AdminInvitationHandlers(
     UserManager<User> userManager,
     IApplicationDbContext dbContext,
     IEmailService emailService,
-    AppConfig appConfig) :
+    IOptions<HostUrlsConfig> hostUrlsConfigOptions) :
     IRequestHandler<InviteAdminCommand>,
     IRequestHandler<ResendAdminInvitationCommand>
 {
@@ -63,7 +64,7 @@ public class AdminInvitationHandlers(
 
         await dbContext.SaveChangesAsync(ct);
 
-        var url = $"{appConfig.AdminFrontendUrl}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}";
+        var url = $"{hostUrlsConfigOptions.Value.Admin}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}";
 
         var subject = "SedaWears Admin Invitation";
         var body = $"<p>You have been invited as an <b>Admin</b> to the SedaWears platform.</p>" +
@@ -76,7 +77,7 @@ public class AdminInvitationHandlers(
     {
         var invitation = await dbContext.InvitedAdmins
             .FirstOrDefaultAsync(ia => ia.Id == request.InvitationId, ct)
-            ?? throw new NotFoundException("Admin invitation not found.");
+            ?? throw new InvitationNotFoundException("Admin invitation not found.");
 
         var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
         invitation.Token = token;
@@ -84,7 +85,7 @@ public class AdminInvitationHandlers(
 
         await dbContext.SaveChangesAsync(ct);
 
-        var url = $"{appConfig.AdminFrontendUrl}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}";
+        var url = $"{hostUrlsConfigOptions.Value.Admin}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}";
 
         var subject = "SedaWears Admin Invitation";
         var body = $"<p>You have been invited as an <b>Admin</b> to the SedaWears platform.</p>" +
@@ -137,14 +138,14 @@ public class AcceptAdminInvitationValidator : AbstractValidator<AcceptAdminInvit
 public class AcceptAdminInvitationHandler(
     UserManager<User> userManager,
     IApplicationDbContext dbContext,
-    AppConfig appConfig) : IRequestHandler<AcceptAdminInvitationCommand>
+    IOptions<AuthConfig> authConfigOptions) : IRequestHandler<AcceptAdminInvitationCommand>
 {
     public async Task Handle(AcceptAdminInvitationCommand request, CancellationToken ct)
     {
         var invitedAdmin = await dbContext.InvitedAdmins
             .FirstOrDefaultAsync(ia => ia.Email == request.Email && ia.Token == request.Token, ct);
 
-        if (invitedAdmin == null || invitedAdmin.CreatedAt.AddHours(appConfig.AdminInvitationExpiry) < DateTime.UtcNow)
+        if (invitedAdmin == null || invitedAdmin.CreatedAt.AddHours(authConfigOptions.Value.AdminInvitationExpiry) < DateTime.UtcNow)
         {
             throw new BadRequestException("Invalid or expired invitation token or email.");
         }

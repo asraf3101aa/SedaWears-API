@@ -15,7 +15,7 @@ public class AddToWishlistHandler(IApplicationDbContext dbContext, ICurrentUser 
         var userId = currentUser.Id ?? throw new UnauthorizedAccessException();
 
         var productExists = await dbContext.Products.AnyAsync(p => p.Id == request.ProductId, ct);
-        if (!productExists) throw new NotFoundException($"Product with ID {request.ProductId} not found.");
+        if (!productExists) throw new ProductNotFoundException();
 
         var alreadyInWishlist = await dbContext.WishlistItems
             .AnyAsync(w => w.UserId == userId && w.ProductId == request.ProductId, ct);

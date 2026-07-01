@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Features.Products.Commands;
 using SedaWears.Application.Features.Products.Models;
@@ -12,7 +11,6 @@ namespace SedaWears.Presentation.Controllers.Shop;
 
 [ApiController]
 [Route("shops/{shopId:int}/[controller]")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Global))]
 [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
 public class ProductsController(ISender mediator) : ControllerBase
 {
@@ -30,15 +28,15 @@ public class ProductsController(ISender mediator) : ControllerBase
         => Ok(await mediator.Send(new GetProductsQuery(categoryId, shopId, pageNumber, pageSize, sortBy, sortOrder, search), ct));
 
     [HttpPost]
-    public async Task<IActionResult> CreateProduct(int shopId, UpsertProductRequest request, CancellationToken ct)
+    public async Task<IActionResult> CreateProduct(int shopId, UpsertProductRequest? request, CancellationToken ct)
     {
         var command = new CreateProductCommand(
-            request.Name,
-            request.Description,
-            request.Price,
-            request.Gender,
-            request.CategoryId,
-            request.Images,
+            request?.Name,
+            request?.Description,
+            request?.Price,
+            request?.Gender,
+            request?.CategoryId,
+            request?.Images,
             shopId
         );
 
@@ -47,16 +45,16 @@ public class ProductsController(ISender mediator) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateProduct(int shopId, int id, UpsertProductRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateProduct(int shopId, int id, UpsertProductRequest? request, CancellationToken ct)
     {
         var command = new UpdateProductCommand(
             id,
-            request.Name,
-            request.Description,
-            request.Price,
-            request.Gender,
-            request.CategoryId,
-            request.Images,
+            request?.Name,
+            request?.Description,
+            request?.Price,
+            request?.Gender,
+            request?.CategoryId,
+            request?.Images,
             shopId
         );
 
@@ -72,10 +70,10 @@ public class ProductsController(ISender mediator) : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
-    public async Task<IActionResult> UpdateProductStatus(int shopId, int id, UpdateProductActiveStatusRequest request, CancellationToken ct)
+    public async Task<IActionResult> UpdateProductStatus(int shopId, int id, UpdateProductActiveStatusRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new UpdateProductActiveStatusCommand(id, request.IsActive!.Value, shopId), ct);
-        var status = request.IsActive!.Value ? "activated" : "deactivated";
+        await mediator.Send(new UpdateProductActiveStatusCommand(id, request?.IsActive, shopId), ct);
+        var status = (request?.IsActive ?? false) ? "activated" : "deactivated";
         return Ok(new { message = $"Product {status} successfully." });
     }
 }

@@ -12,7 +12,7 @@ public class ConfirmEmailHandler(UserManager<User> userManager) : IRequestHandle
 {
     public async Task Handle(ConfirmEmailCommand request, CancellationToken ct)
     {
-        var user = await userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new NotFoundException("User not found");
+        var user = await userManager.FindByIdAsync(request.UserId.ToString()) ?? throw new UserNotFoundException("User not found");
         var result = await userManager.ConfirmEmailAsync(user, request.Token);
         if (!result.Succeeded) throw new BadRequestException("Confirmation failed");
     }

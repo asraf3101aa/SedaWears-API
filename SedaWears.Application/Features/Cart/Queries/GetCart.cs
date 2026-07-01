@@ -1,9 +1,5 @@
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Interfaces;
-
-using SedaWears.Application.Common.Exceptions;
-
 using SedaWears.Application.Features.Cart.Models;
 
 namespace SedaWears.Application.Features.Cart.Queries;

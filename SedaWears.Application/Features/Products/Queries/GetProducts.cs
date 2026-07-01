@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Interfaces;
@@ -21,7 +22,7 @@ public record GetProductsQuery(
 
 public class GetProductsValidator : PaginatedQueryValidator<GetProductsQuery> { }
 
-public class GetProductsHandler(IApplicationDbContext dbContext, OpeninaryConfig config) : IRequestHandler<GetProductsQuery, PaginatedList<ProductDto>>
+public class GetProductsHandler(IApplicationDbContext dbContext, IOptions<OpeninaryConfig> configOptions) : IRequestHandler<GetProductsQuery, PaginatedList<ProductDto>>
 {
     public async Task<PaginatedList<ProductDto>> Handle(GetProductsQuery request, CancellationToken ct)
     {
@@ -53,7 +54,7 @@ public class GetProductsHandler(IApplicationDbContext dbContext, OpeninaryConfig
         var totalCount = await query.CountAsync(ct);
         var products = await query.Skip((request.PageNumber - 1) * request.PageSize)
                                   .Take(request.PageSize)
-                                  .ProjectToProduct(config.BaseUrl)
+                                  .ProjectToProduct(configOptions.Value.BaseUrl)
                                   .ToListAsync(ct);
 
         return new PaginatedList<ProductDto>(products, totalCount, request.PageNumber, request.PageSize);

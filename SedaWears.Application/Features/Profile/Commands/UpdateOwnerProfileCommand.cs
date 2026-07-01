@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 
+using SedaWears.Application.Common;
+using ZiggyCreatures.Caching.Fusion;
+
 namespace SedaWears.Application.Features.Profile.Commands;
 
 public record UpdateOwnerProfileCommand(string? FirstName, string? LastName, string? Phone) : IRequest;
@@ -18,7 +21,8 @@ public class UpdateOwnerProfileCommandValidator : AbstractValidator<UpdateOwnerP
     }
 }
 
-public class UpdateOwnerProfileCommandHandler(IApplicationDbContext dbContext, ICurrentUser currentUser) :
+public class UpdateOwnerProfileCommandHandler(IApplicationDbContext dbContext, ICurrentUser currentUser,
+    IFusionCache fusionCache) :
     IRequestHandler<UpdateOwnerProfileCommand>
 {
     public async Task Handle(UpdateOwnerProfileCommand request, CancellationToken cancellationToken)
@@ -35,7 +39,9 @@ public class UpdateOwnerProfileCommandHandler(IApplicationDbContext dbContext, I
 
         if (rowsAffected == 0)
         {
-            throw new NotFoundException("User not found.");
+            throw new UserNotFoundException("User not found.");
         }
+
+        await fusionCache.RemoveAsync(CacheKeys.Profile(userId), token: cancellationToken);
     }
 }

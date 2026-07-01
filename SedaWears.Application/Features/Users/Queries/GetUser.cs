@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SedaWears.Application.Features.Users.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,7 @@ public class GetUserHandler(
     UserManager<User> userManager,
     ICurrentUser currentUser,
     IOriginContext originContext,
-    OpeninaryConfig config) : IRequestHandler<GetUserQuery, UserDto>
+    IOptions<OpeninaryConfig> configOptions) : IRequestHandler<GetUserQuery, UserDto>
 {
     public async Task<UserDto> Handle(GetUserQuery request, CancellationToken ct)
     {
@@ -31,7 +32,7 @@ public class GetUserHandler(
         return await userManager.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .ProjectToUser(config.BaseUrl)
+            .ProjectToUser(configOptions.Value.BaseUrl)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException($"{role} not found.");
     }

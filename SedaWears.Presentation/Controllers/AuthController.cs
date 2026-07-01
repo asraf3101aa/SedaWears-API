@@ -3,27 +3,20 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using SedaWears.Application.Features.Auth.Models;
 using SedaWears.Application.Features.Auth.Commands;
-using SedaWears.Application.Features.Invitations.Commands;
-using SedaWears.Application.Common.Settings;
-using SedaWears.Application.Common;
-using SedaWears.Application.Common.Interfaces;
-using SedaWears.Domain.Enums;
 
 namespace SedaWears.Presentation.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-[EnableRateLimiting(nameof(RateLimitingPolicies.Auth))]
 public class AuthController(ISender mediator) : ControllerBase
 {
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest? request)
     {
-        var (userId, roles) = await mediator.Send(new LoginCommand(request.Email?.Trim(), request.Password, request.RememberMe));
+        var (userId, roles) = await mediator.Send(new LoginCommand(request?.Email?.Trim(), request?.Password, request?.RememberMe));
 
         var claims = new List<Claim>
         {
@@ -38,8 +31,38 @@ public class AuthController(ISender mediator) : ControllerBase
         var claimsIdentity = new ClaimsIdentity(claims, IdentityConstants.ApplicationScheme);
         var authProperties = new AuthenticationProperties
         {
-            IsPersistent = request.RememberMe,
-            ExpiresUtc = request.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : null
+            IsPersistent = request?.RememberMe ?? false,
+            ExpiresUtc = (request?.RememberMe ?? false) ? DateTimeOffset.UtcNow.AddDays(30) : null
+        };
+
+        await HttpContext.SignInAsync(
+            IdentityConstants.ApplicationScheme,
+            new ClaimsPrincipal(claimsIdentity),
+            authProperties);
+
+        return Ok();
+    }
+
+    [HttpPost("google-login")]
+    public async Task<IActionResult> GoogleLogin(GoogleLoginRequest? request)
+    {
+        var (userId, roles) = await mediator.Send(new LoginWithGoogleCommand(request?.IdToken, request?.RememberMe));
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, userId.ToString()),
+        };
+
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        var claimsIdentity = new ClaimsIdentity(claims, IdentityConstants.ApplicationScheme);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = request?.RememberMe ?? false,
+            ExpiresUtc = (request?.RememberMe ?? false) ? DateTimeOffset.UtcNow.AddDays(30) : null
         };
 
         await HttpContext.SignInAsync(
@@ -51,15 +74,15 @@ public class AuthController(ISender mediator) : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterRequest request)
+    public async Task<IActionResult> Register(RegisterRequest? request)
     {
         await mediator.Send(
             new RegisterCommand(
-            request.Email?.Trim(),
-            request.Password,
-            request.FirstName?.Trim(),
-            request.LastName?.Trim(),
-            request.Phone?.Trim())
+            request?.Email?.Trim(),
+            request?.Password,
+            request?.FirstName?.Trim(),
+            request?.LastName?.Trim(),
+            request?.Phone?.Trim())
         );
         return Ok(new { Message = "Registration successful. Please login to continue." });
     }

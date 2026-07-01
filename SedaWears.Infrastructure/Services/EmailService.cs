@@ -1,20 +1,19 @@
-using Resend;
+using MassTransit;
+using SedaWears.Application.Common.Events;
 using SedaWears.Application.Common.Interfaces;
-using SedaWears.Application.Common.Settings;
 
 namespace SedaWears.Infrastructure.Services;
 
-public class EmailService(IResend resend, EmailConfig config) : IEmailService
+public class EmailService(IPublishEndpoint publishEndpoint) : IEmailService
 {
     public async Task SendEmailAsync(string to, string subject, string body, bool useNoReply = true)
     {
-        var fromEmail = useNoReply ? config.NoReplyEmail : config.ContactEmail;
-        var message = new EmailMessage();
-        message.From = $"{config.FromName} <{fromEmail}>";
-        message.To.Add(to);
-        message.Subject = subject;
-        message.HtmlBody = body;
-
-        await resend.EmailSendAsync(message);
+        await publishEndpoint.Publish(new SendEmailEvent
+        {
+            To = to,
+            Subject = subject,
+            Body = body,
+            UseNoReply = useNoReply
+        });
     }
 }
