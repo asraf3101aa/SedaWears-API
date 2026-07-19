@@ -4,10 +4,11 @@ using SedaWears.Application.Common.Validators;
 using Microsoft.AspNetCore.Identity;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Entities;
+using SedaWears.Domain.Enums;
 using SedaWears.Application.Features.Users.Models;
 using SedaWears.Application.Features.Users.Projections;
 
-using SedaWears.Application.Common.Interfaces;
+
 
 using Microsoft.EntityFrameworkCore;
 
@@ -27,11 +28,11 @@ public class UpdateUserValidator : AbstractValidator<UpdateUserCommand>
     }
 }
 
-public class UpdateUserHandler(UserManager<User> userManager, IOriginContext originContext) : IRequestHandler<UpdateUserCommand>
+public class UpdateUserHandler(UserManager<User> userManager) : IRequestHandler<UpdateUserCommand>
 {
     public async Task Handle(UpdateUserCommand request, CancellationToken ct)
     {
-        var role = originContext.CurrentRole;
+        var role = UserRole.Customer;
         var user = await userManager.FindByIdAsync(request.Id.ToString());
         
         if (user == null || !await userManager.IsInRoleAsync(user, role.ToString()))

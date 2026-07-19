@@ -71,7 +71,7 @@ public class CreatePromoCodeHandler(
 {
     public async Task<int> Handle(CreatePromoCodeCommand request, CancellationToken ct)
     {
-        var user = currentUser.Id.HasValue ? await userManager.FindByIdAsync(currentUser.Id.Value.ToString()) : null;
+        var user = true ? await userManager.FindByIdAsync(currentUser.Id.ToString()) : null;
         var isAdmin = user != null && await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));
 
         if (request.ShopId.HasValue)

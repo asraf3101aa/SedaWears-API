@@ -13,7 +13,7 @@ public class DeleteAccountCommandHandler(UserManager<User> userManager, ICurrent
 {
     public async Task Handle(DeleteAccountCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id!.Value;
+        var userId = currentUser.Id;
         var user = await userManager.FindByIdAsync(userId.ToString()) ?? throw new UserNotFoundException("User not found.");
         await userManager.DeleteAsync(user);
     }

@@ -14,7 +14,7 @@ public class DeleteAddressCommandHandler(IApplicationDbContext dbContext, ICurre
 {
     public async Task Handle(DeleteAddressCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id ?? throw new UnauthorizedAccessException();
+        var userId = currentUser.Id;
         var address = await dbContext.Addresses
             .FirstOrDefaultAsync(a => a.Id == request.AddressId && a.UserId == userId, cancellationToken)
             ?? throw new AddressNotFoundException();
@@ -22,6 +22,6 @@ public class DeleteAddressCommandHandler(IApplicationDbContext dbContext, ICurre
         dbContext.Addresses.Remove(address);
         await dbContext.SaveChangesAsync(cancellationToken);
         
-        await fusionCache.RemoveAsync(CacheKeys.ProfileAddresses(userId), token: cancellationToken);
+        await fusionCache.RemoveAsync(CacheKeys.UserAddresses(userId), token: cancellationToken);
     }
 }

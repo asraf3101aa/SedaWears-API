@@ -1,50 +1,36 @@
 using MediatR;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Exceptions;
-using SedaWears.Domain.Entities;
 using SedaWears.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
-public record DeleteCategoryCommand(int Id, int? ShopId = null) : IRequest;
+public record DeleteCategoryCommand(int Id, int ShopId) : IRequest;
 
 public class DeleteCategoryHandler(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
-    UserManager<User> userManager) : IRequestHandler<DeleteCategoryCommand>
+    IUserService userService,
+    IOriginContext originContext) : IRequestHandler<DeleteCategoryCommand>
 {
     public async Task Handle(DeleteCategoryCommand request, CancellationToken ct)
     {
-        var currentUserId = currentUser.Id;
-        if (!currentUserId.HasValue)
-            throw new UnauthorizedAccessException();
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
 
-        var user = await userManager.FindByIdAsync(currentUserId.Value.ToString()) ?? throw new UnauthorizedAccessException();
-        var isAdmin = await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));
+        if (!user.Roles.Contains(originContext.OriginRole))
+            throw new ForbiddenException("You are not authorized to delete categories for this shop.");
 
-        if (request.ShopId.HasValue)
+        var isAuthorized = originContext.OriginRole switch
         {
-            var shopExists = await dbContext.Shops
-                .AnyAsync(s => s.Id == request.ShopId.Value, ct);
+            UserRole.Admin => true,
+            UserRole.Owner => await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId, ct),
+            UserRole.Manager => await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId, ct),
+            _ => false
+        };
 
-            if (!shopExists)
-                throw new ShopNotFoundException();
-
-            if (!isAdmin)
-            {
-                var isMember = await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId.Value, ct)
-                               || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
-
-                if (!isMember)
-                    throw new ShopNotFoundException();
-            }
-        }
-        else if (!isAdmin)
-        {
-            throw new ForbiddenException("Only administrators can delete global categories.");
-        }
+        if (!isAuthorized)
+            throw new ShopNotFoundException();
 
         var deletedRowsCount = await dbContext.Categories
             .Where(c => c.Id == request.Id && c.ShopId == request.ShopId)

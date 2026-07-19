@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using SedaWears.Application.Common.Settings;
-using System;
-using System.Threading.Tasks;
 
 namespace SedaWears.Presentation.Extensions;
 
@@ -26,13 +23,13 @@ internal static class AuthenticationExtensions
 
                 options.Events.OnRedirectToLogin = context =>
                 {
-                    context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized;
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     return Task.CompletedTask;
                 };
 
                 options.Events.OnRedirectToAccessDenied = context =>
                 {
-                    context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden;
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     return Task.CompletedTask;
                 };
             });

@@ -4,10 +4,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace SedaWears.Infrastructure.Persistence.Migrations
+namespace SedaWears.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -55,25 +55,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Discounts",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    DiscountPercentage = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Discounts", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -271,7 +252,7 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     DisplayOrder = table.Column<int>(type: "integer", nullable: false),
-                    ShopId = table.Column<int>(type: "integer", nullable: true),
+                    ShopId = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -448,7 +429,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                     Gender = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    DiscountId = table.Column<int>(type: "integer", nullable: true),
                     ShopId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
@@ -460,12 +440,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                         principalTable: "Categories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Products_Discounts_DiscountId",
-                        column: x => x.DiscountId,
-                        principalTable: "Discounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Products_Shops_ShopId",
                         column: x => x.ShopId,
@@ -762,26 +736,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                 filter: "\"ShopId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Discounts_EndDate",
-                table: "Discounts",
-                column: "EndDate");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Discounts_IsActive",
-                table: "Discounts",
-                column: "IsActive");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Discounts_Name",
-                table: "Discounts",
-                column: "Name");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Discounts_StartDate",
-                table: "Discounts",
-                column: "StartDate");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Guests_Email",
                 table: "Guests",
                 column: "Email");
@@ -883,11 +837,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                 name: "IX_Products_CategoryId",
                 table: "Products",
                 column: "CategoryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Products_DiscountId",
-                table: "Products",
-                column: "DiscountId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_Gender",
@@ -1093,9 +1042,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Categories");
-
-            migrationBuilder.DropTable(
-                name: "Discounts");
 
             migrationBuilder.DropTable(
                 name: "Shops");

@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Web;
 using Microsoft.AspNetCore.Identity;
 using SedaWears.Domain.Enums;
-using SedaWears.Application.Features.Invitations.Models;
 
 namespace SedaWears.Application.Features.Invitations.Commands;
 
@@ -38,6 +37,9 @@ public class InviteOwnerHandler(
         var shop = await dbContext.Shops.AsNoTracking().FirstOrDefaultAsync(s => s.Id == request.ShopId, ct)
             ?? throw new ShopNotFoundException();
 
+        if (shop.Id == 1)
+            throw new ForbiddenException("This shop is managed exclusively by SedaWears admins.");
+
         var isOwner = await dbContext.ShopOwners
             .AnyAsync(so => so.ShopId == request.ShopId && so.User.Email == request.Email, ct);
 
@@ -64,10 +66,7 @@ public class InviteOwnerHandler(
 
         var url = $"{hostUrlsConfigOptions.Value.Owner}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
 
-        await emailService.SendEmailAsync(
-            invitation.Email,
-            $"SedaWears Shop Owner Invitation for {shop.Name}",
-            $"<p>You have been invited as a Shop Owner for <b>{shop.Name}</b> on SedaWears.</p><p>Click <a href='{url}'>here</a> to accept the invitation and set your password.</p>");
+        await emailService.SendOwnerInvitationEmailAsync(invitation.Email, shop.Name, url);
     }
 }
 
@@ -207,10 +206,7 @@ public class ResendShopOwnerInvitationHandler(
 
         var url = $"{hostUrlsConfigOptions.Value.Owner}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
 
-        var subject = $"SedaWears Shop Owner Invitation for {shop.Name}";
-        var body = $"<p>You have been invited as a Shop Owner for <b>{shop.Name}</b> on SedaWears.</p><p>Click <a href='{url}'>here</a> to accept the invitation and set your password.</p>";
-
-        await emailService.SendEmailAsync(invitation.Email, subject, body);
+        await emailService.SendOwnerInvitationEmailAsync(invitation.Email, shop.Name, url);
     }
 }
 

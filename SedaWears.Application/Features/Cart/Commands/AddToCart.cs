@@ -13,7 +13,7 @@ public class AddToCartHandler(IApplicationDbContext context, ICurrentUser curren
 {
     public async Task Handle(AddToCartCommand request, CancellationToken ct)
     {
-        var userId = currentUser.Id!.Value;
+        var userId = currentUser.Id;
         var productExists = await context.Products.AnyAsync(p => p.Id == request.ProductId, ct);
         if (!productExists) throw new ProductNotFoundException();
 

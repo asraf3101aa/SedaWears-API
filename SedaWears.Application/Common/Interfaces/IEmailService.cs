@@ -2,5 +2,8 @@ namespace SedaWears.Application.Common.Interfaces;
 
 public interface IEmailService
 {
-    Task SendEmailAsync(string to, string subject, string body, bool useNoReply = true);
+    Task SendManagerInvitationEmailAsync(string to, string shopName, string url);
+    Task SendOwnerInvitationEmailAsync(string to, string shopName, string url);
+    Task SendAdminInvitationEmailAsync(string to, string url);
+    Task SendForgotPasswordEmailAsync(string to, string url);
 }

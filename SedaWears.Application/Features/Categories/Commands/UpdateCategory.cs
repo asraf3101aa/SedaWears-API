@@ -1,15 +1,14 @@
 using MediatR;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+using Npgsql;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Exceptions;
-using SedaWears.Domain.Entities;
 using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
-public record UpdateCategoryCommand(int Id, string Name, string? Description, int? ShopId = null) : IRequest;
+public record UpdateCategoryCommand(int Id, string? Name, string? Description, int ShopId) : IRequest;
 
 public class UpdateCategoryValidator : AbstractValidator<UpdateCategoryCommand>
 {
@@ -30,50 +29,41 @@ public class UpdateCategoryValidator : AbstractValidator<UpdateCategoryCommand>
 public class UpdateCategoryHandler(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
-    UserManager<User> userManager) : IRequestHandler<UpdateCategoryCommand>
+    IUserService userService,
+    IOriginContext originContext) : IRequestHandler<UpdateCategoryCommand>
 {
     public async Task Handle(UpdateCategoryCommand request, CancellationToken ct)
     {
-        var user = currentUser.Id.HasValue ? await userManager.FindByIdAsync(currentUser.Id.Value.ToString()) : null;
-        var isAdmin = user != null && await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
 
-        if (request.ShopId.HasValue)
+        if (!user.Roles.Contains(originContext.OriginRole))
+            throw new ForbiddenException("You are not authorized to update categories for this shop.");
+
+        var isAuthorized = originContext.OriginRole switch
         {
-            var shopExists = await dbContext.Shops
-                .AnyAsync(s => s.Id == request.ShopId.Value, ct);
+            UserRole.Admin => true,
+            UserRole.Owner => await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId, ct),
+            UserRole.Manager => await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId, ct),
+            _ => false
+        };
 
-            if (!shopExists)
-                throw new ShopNotFoundException();
-
-            if (!isAdmin)
-            {
-                var isMember = await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId.Value, ct)
-                               || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
-
-                if (!isMember)
-                    throw new ShopNotFoundException();
-            }
-        }
-        else if (!isAdmin)
-        {
-            throw new ForbiddenException("Only administrators can update global categories.");
-        }
+        if (!isAuthorized)
+            throw new ShopNotFoundException();
 
         var category = await dbContext.Categories
             .FirstOrDefaultAsync(c => c.Id == request.Id && c.ShopId == request.ShopId, ct)
             ?? throw new CategoryNotFoundException();
 
-        var nameExists = await dbContext.Categories
-            .AnyAsync(c => c.Id != request.Id &&
-                           EF.Functions.ILike(c.Name, request.Name) &&
-                           c.ShopId == request.ShopId, ct);
-
-        if (nameExists)
-            throw new BadRequestException("Category with this name already exists.");
-
-        category.Name = request.Name;
+        category.Name = request.Name!;
         category.Description = request.Description;
 
-        await dbContext.SaveChangesAsync(ct);
+        try
+        {
+            await dbContext.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            throw new BadRequestException("Category with this name already exists.");
+        }
     }
 }

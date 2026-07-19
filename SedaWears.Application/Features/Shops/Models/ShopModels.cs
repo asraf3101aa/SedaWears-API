@@ -6,8 +6,8 @@ public record ShopDto(
     string Name,
     string SubdomainSlug,
     string? Description,
-    string? LogoFileName,
-    string? BannerFileName,
+    Uri? LogoUrl,
+    Uri? BannerUrl,
     bool IsActive,
     DateTime CreatedAt
 );

@@ -4,8 +4,8 @@ using SedaWears.Application.Common.Validators;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Exceptions;
-using SedaWears.Application.Common.Interfaces;
 using SedaWears.Domain.Entities;
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
@@ -28,12 +28,11 @@ public class ResetPasswordValidator : AbstractValidator<ResetPasswordCommand>
 }
 
 public class ResetPasswordHandler(
-    UserManager<User> userManager,
-    IOriginContext originContext) : IRequestHandler<ResetPasswordCommand>
+    UserManager<User> userManager) : IRequestHandler<ResetPasswordCommand>
 {
     public async Task Handle(ResetPasswordCommand request, CancellationToken ct)
     {
-        var role = originContext.CurrentRole;
+        var role = UserRole.Customer;
         var usersInRole = await userManager.GetUsersInRoleAsync(role.ToString());
         var user = usersInRole.FirstOrDefault(u => u.Email == request.Email) ?? throw new BadRequestException("Invalid email or token.");
         var result = await userManager.ResetPasswordAsync(user, request.Token!, request.NewPassword!);

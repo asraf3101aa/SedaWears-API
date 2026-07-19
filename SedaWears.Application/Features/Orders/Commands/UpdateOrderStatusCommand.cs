@@ -13,8 +13,6 @@ public class UpdateOrderStatusValidator : AbstractValidator<UpdateOrderStatusCom
 {
     public UpdateOrderStatusValidator()
     {
-        RuleFor(x => x.OrderId)
-            .GreaterThan(0).WithMessage("A valid order identifier is required.");
 
         RuleFor(x => x.CustomerId)
             .GreaterThan(0).WithMessage("A valid customer identifier is required.");

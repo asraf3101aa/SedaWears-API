@@ -59,8 +59,8 @@ public class UpdateShopHandler(IApplicationDbContext dbContext) : IRequestHandle
 {
     public async Task Handle(UpdateShopCommand request, CancellationToken ct)
     {
-        var shop = await dbContext.Shops
-            .FirstOrDefaultAsync(s => s.Id == request.Id, ct) ?? throw new ShopNotFoundException();
+        var shop = await dbContext.Shops.FirstOrDefaultAsync(s => s.Id == request.Id, ct)
+            ?? throw new ShopNotFoundException();
 
         shop.Name = request.Name!;
         shop.SubdomainSlug = request.SubdomainSlug!;

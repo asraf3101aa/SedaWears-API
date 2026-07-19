@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using SedaWears.Domain.Common;
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Domain.Entities;
 
@@ -16,7 +17,6 @@ public class Shop : BaseEntity
     public bool IsActive { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Relationships
     public ICollection<ShopOwner> Owners { get; set; } = [];
     public ICollection<ShopManager> Managers { get; set; } = [];
     public ICollection<Product> Products { get; set; } = [];
@@ -72,11 +72,61 @@ public class InvitedShopManager : InvitedShopMember
 }
 #endregion
 
-#region InvitedAdmin
-public class InvitedAdmin : BaseEntity
+#region Category
+public class Category : BaseEntity
 {
-    public string Email { get; set; } = null!;
-    public string Token { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public int DisplayOrder { get; set; }
+
+    public int ShopId { get; set; }
+    public Shop Shop { get; set; } = null!;
+    public bool IsActive { get; set; } = false;
+
+    public ICollection<Product> Products { get; set; } = [];
+}
+#endregion
+
+#region Product
+public class Product : BaseEntity
+{
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public decimal Price { get; set; }
+
+    public int CategoryId { get; set; }
+    public Category Category { get; set; } = null!;
+
+    public Gender Gender { get; set; }
+    public bool IsActive { get; set; } = false;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Relationships
+    public ICollection<ProductImage> Images { get; set; } = [];
+    public ICollection<ProductSizeStock> SizeStocks { get; set; } = [];
+}
+#endregion
+
+
+#region ProductImage
+public class ProductImage : BaseEntity
+{
+    public int ProductId { get; set; }
+    public Product Product { get; set; } = null!;
+
+    public string FileName { get; set; } = string.Empty;
+    public int Order { get; set; }
+}
+#endregion
+
+#region ProductSizeStock
+public class ProductSizeStock : BaseEntity
+{
+    public int ProductId { get; set; }
+    public Product Product { get; set; } = null!;
+
+    public ProductSize Size { get; set; }
+    public int Stock { get; set; }
 }
 #endregion

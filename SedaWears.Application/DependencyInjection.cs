@@ -4,7 +4,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SedaWears.Application.Common.Behaviors;
 using SedaWears.Application.Common.Interfaces;
-using SedaWears.Application.Common.Services;
+
 
 namespace SedaWears.Application;
 
@@ -14,8 +14,6 @@ public static class DependencyInjection
     {
 
         var assembly = Assembly.GetExecutingAssembly();
-
-        services.AddScoped<IUserService, UserService>();
 
         ValidatorOptions.Global.DefaultClassLevelCascadeMode = CascadeMode.Continue;
         ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;

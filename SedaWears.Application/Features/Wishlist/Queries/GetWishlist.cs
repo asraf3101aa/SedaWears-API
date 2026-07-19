@@ -19,7 +19,7 @@ public class GetWishlistHandler(IApplicationDbContext dbContext, ICurrentUser cu
 {
     public async Task<List<WishlistDto>> Handle(GetWishlistQuery request, CancellationToken ct)
     {
-        var userId = currentUser.Id ?? throw new UnauthorizedAccessException();
+        var userId = currentUser.Id;
 
         return await dbContext.WishlistItems
             .AsNoTracking()

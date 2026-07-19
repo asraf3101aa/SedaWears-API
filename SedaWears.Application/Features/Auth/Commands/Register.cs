@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using FluentValidation;
+using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Validators;
-using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Entities;
 using SedaWears.Domain.Enums;
 
@@ -40,21 +40,29 @@ public class RegisterValidator : AbstractValidator<RegisterCommand>
 }
 
 public class RegisterHandler(
-    UserManager<User> userManager) : IRequestHandler<RegisterCommand>
+    IUserService userService) : IRequestHandler<RegisterCommand>
 {
     public async Task Handle(RegisterCommand request, CancellationToken ct)
     {
+        var email = request.Email!.Trim();
+        var existingUser = await userService.FindByEmailAsync(email);
+
+        if (existingUser != null)
+        {
+            await userService.AddToRoleAsync(existingUser, nameof(UserRole.Customer));
+            return;
+        }
+
         var user = new User
         {
-            Email = request.Email,
-            UserName = request.Email,
-            FirstName = request.FirstName!,
-            LastName = request.LastName!,
-            PhoneNumber = request.Phone
+            Email = email,
+            UserName = email,
+            FirstName = request.FirstName!.Trim(),
+            LastName = request.LastName!.Trim(),
+            PhoneNumber = request.Phone!.Trim()
         };
-        var result = await userManager.CreateAsync(user, request.Password!);
-        if (!result.Succeeded) throw new BadRequestException(result.Errors.First().Description);
 
-        await userManager.AddToRoleAsync(user, nameof(UserRole.Customer));
+        await userService.CreateUserAsync(user, request.Password!);
+        await userService.AddToRoleAsync(user, nameof(UserRole.Customer));
     }
 }

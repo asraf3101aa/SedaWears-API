@@ -1,7 +1,5 @@
 using SedaWears.Presentation.Middleware;
 using SedaWears.Presentation.Extensions;
-using SedaWears.Application.Common.Settings;
-using Microsoft.Extensions.Options;
 
 namespace SedaWears.Presentation;
 

@@ -1,7 +1,6 @@
 using SedaWears.Application.Common.Settings;
 using SedaWears.Application.Common.Settings.Validators;
 using SedaWears.Infrastructure.Extensions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace SedaWears.Infrastructure;

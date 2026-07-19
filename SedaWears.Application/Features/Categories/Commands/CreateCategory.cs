@@ -1,7 +1,7 @@
 using MediatR;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+using Npgsql;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Entities;
@@ -9,7 +9,7 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
-public record CreateCategoryCommand(string Name, string? Description, int? ShopId = null) : IRequest;
+public record CreateCategoryCommand(string? Name, string? Description, int ShopId) : IRequest;
 
 public class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
 {
@@ -30,38 +30,26 @@ public class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
 public class CreateCategoryHandler(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
-    UserManager<User> userManager) : IRequestHandler<CreateCategoryCommand>
+    IUserService userService,
+    IOriginContext originContext) : IRequestHandler<CreateCategoryCommand>
 {
     public async Task Handle(CreateCategoryCommand request, CancellationToken ct)
     {
-        var user = currentUser.Id.HasValue ? await userManager.FindByIdAsync(currentUser.Id.Value.ToString()) : null;
-        var isAdmin = user != null && await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
 
-        if (request.ShopId.HasValue)
+        if (!user.Roles.Contains(originContext.OriginRole))
+            throw new ForbiddenException("You are not authorized to create categories for this shop.");
+
+        var isAuthorized = originContext.OriginRole switch
         {
-            var shop = await dbContext.Shops
-                .FirstOrDefaultAsync(s => s.Id == request.ShopId.Value, ct)
-                ?? throw new ShopNotFoundException();
+            UserRole.Admin => true,
+            UserRole.Owner => await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId, ct),
+            UserRole.Manager => await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId, ct),
+            _ => false
+        };
 
-            if (!isAdmin)
-            {
-                var isMember = await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId.Value, ct)
-                               || await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId.Value, ct);
-
-                if (!isMember)
-                    throw new ShopNotFoundException();
-            }
-        }
-        else if (!isAdmin)
-        {
-            throw new ForbiddenException("Only administrators can create global categories.");
-        }
-
-        var exists = await dbContext.Categories
-            .AnyAsync(c => EF.Functions.ILike(c.Name, request.Name) && c.ShopId == request.ShopId, ct);
-
-        if (exists)
-            throw new BadRequestException("Category with this name already exists.");
+        if (!isAuthorized)
+            throw new ShopNotFoundException();
 
         var finalOrder = (await dbContext.Categories
             .Where(c => c.ShopId == request.ShopId)
@@ -69,13 +57,24 @@ public class CreateCategoryHandler(
 
         var category = new Category
         {
-            Name = request.Name,
+            Name = request.Name!,
             Description = request.Description,
             DisplayOrder = finalOrder,
             ShopId = request.ShopId
         };
         dbContext.Categories.Add(category);
 
-        await dbContext.SaveChangesAsync(ct);
+        try
+        {
+            await dbContext.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation })
+        {
+            throw new ShopNotFoundException();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            throw new BadRequestException("Category with this name already exists.");
+        }
     }
 }

@@ -1,8 +1,8 @@
 using MediatR;
 using FluentValidation;
 using SedaWears.Application.Common.Interfaces;
-using SedaWears.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using SedaWears.Domain.Entities;
 
 namespace SedaWears.Application.Features.Shops.Commands;
 

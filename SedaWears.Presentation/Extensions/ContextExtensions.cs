@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Presentation.Services;
 
@@ -11,7 +10,7 @@ internal static class ContextExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IOriginContext, OriginContext>();
-        
+
         return services;
     }
 }

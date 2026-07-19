@@ -2,9 +2,11 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SedaWears.Application.Common;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Domain.Entities;
+using SedaWears.Domain.Enums;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Profile.Commands;
@@ -32,14 +34,13 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
 public class UpdateProfileCommandHandler(
     IApplicationDbContext dbContext,
     UserManager<User> userManager,
-    IOriginContext originContext,
     ICurrentUser currentUser,
     IFusionCache fusionCache) : IRequestHandler<UpdateProfileCommand>
 {
     public async Task Handle(UpdateProfileCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id!.Value;
-        var role = originContext.CurrentRole;
+        var userId = currentUser.Id;
+        var role = UserRole.Customer;
 
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user == null || !await userManager.IsInRoleAsync(user, role.ToString()))
@@ -60,6 +61,6 @@ public class UpdateProfileCommandHandler(
             throw new UserNotFoundException("User not found.");
         }
 
-        await fusionCache.RemoveAsync($"profile-{userId}", token: cancellationToken);
+        await fusionCache.RemoveAsync(CacheKeys.User(userId), token: cancellationToken);
     }
 }

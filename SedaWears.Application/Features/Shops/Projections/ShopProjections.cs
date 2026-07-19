@@ -12,8 +12,8 @@ public static class ShopProjections
             s.Name,
             s.SubdomainSlug,
             s.Description,
-            string.IsNullOrEmpty(s.LogoFileName) ? null : baseMediaUrl + "/t/" + s.LogoFileName,
-            string.IsNullOrEmpty(s.BannerFileName) ? null : baseMediaUrl + "/t/" + s.BannerFileName,
+            string.IsNullOrEmpty(s.LogoFileName) ? null : new Uri(baseMediaUrl + "/" + s.LogoFileName),
+            string.IsNullOrEmpty(s.BannerFileName) ? null : new Uri(baseMediaUrl + "/" + s.BannerFileName),
             s.IsActive,
             s.CreatedAt
         ));

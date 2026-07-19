@@ -22,6 +22,15 @@ public class User : IdentityUser<int>
 }
 #endregion
 
+#region InvitedAdmin
+public class InvitedAdmin : BaseEntity
+{
+    public string Email { get; set; } = null!;
+    public string Token { get; set; } = null!;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+#endregion
+
 #region Address
 public class Address : BaseEntity
 {

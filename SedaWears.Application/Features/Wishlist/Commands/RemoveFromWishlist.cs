@@ -10,7 +10,7 @@ public class RemoveFromWishlistHandler(IApplicationDbContext dbContext, ICurrent
 {
     public async Task Handle(RemoveFromWishlistCommand request, CancellationToken ct)
     {
-        var userId = currentUser.Id ?? throw new UnauthorizedAccessException();
+        var userId = currentUser.Id;
 
         var item = await dbContext.WishlistItems
             .FirstOrDefaultAsync(w => w.UserId == userId && w.ProductId == request.ProductId, ct);

@@ -30,9 +30,6 @@ public class ValidatePromoCodeValidator : AbstractValidator<ValidatePromoCodeQue
         RuleFor(x => x.Code)
             .NotEmpty().WithMessage("Promo code is required.");
 
-        RuleFor(x => x.ShopId)
-            .GreaterThan(0).WithMessage("Invalid shop ID.");
-
         RuleFor(x => x.OrderSubtotal)
             .GreaterThanOrEqualTo(0).WithMessage("Order subtotal must be greater than or equal to 0.");
     }
@@ -84,9 +81,9 @@ public class ValidatePromoCodeHandler(
         {
             int usageCount = 0;
             
-            if (currentUser.Id.HasValue)
+            if (true)
             {
-                var userId = currentUser.Id.Value;
+                var userId = currentUser.Id;
                 usageCount = await dbContext.Orders
                     .CountAsync(o => o.PromoCodeId == promoCode.Id && o.UserId == userId && o.Status != OrderStatus.Cancelled, ct);
             }

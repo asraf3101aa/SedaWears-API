@@ -14,7 +14,6 @@ public class DeleteAdminValidator : AbstractValidator<DeleteAdminCommand>
 {
     public DeleteAdminValidator()
     {
-        RuleFor(x => x.Id).GreaterThan(0);
     }
 }
 

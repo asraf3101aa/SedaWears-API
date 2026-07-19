@@ -26,12 +26,11 @@ public class ForgotPasswordValidator : AbstractValidator<ForgotPasswordCommand>
 public class ForgotPasswordHandler(
     UserManager<User> userManager,
     IEmailService emailService,
-    IOriginContext originContext,
     IOptions<HostUrlsConfig> hostUrlsConfigOptions) : IRequestHandler<ForgotPasswordCommand>
 {
     public async Task Handle(ForgotPasswordCommand request, CancellationToken ct)
     {
-        var role = originContext.CurrentRole;
+        var role = UserRole.Customer;
         var usersInRole = await userManager.GetUsersInRoleAsync(role.ToString());
         var user = usersInRole.FirstOrDefault(u => u.Email == request.Email);
 
@@ -47,9 +46,6 @@ public class ForgotPasswordHandler(
         };
         var url = $"{frontendUrl}/reset-password?email={user.Email}&token={HttpUtility.UrlEncode(token)}";
 
-        await emailService.SendEmailAsync(
-            user.Email!,
-            "Reset Password",
-            $"<p>To reset your password, click <a href='{url}'>here</a>.</p>");
+        await emailService.SendForgotPasswordEmailAsync(user.Email!, url);
     }
 }

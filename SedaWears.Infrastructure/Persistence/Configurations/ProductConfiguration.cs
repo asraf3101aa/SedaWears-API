@@ -20,16 +20,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(p => p.Discount)
-            .WithMany(d => d.Products)
-            .HasForeignKey(p => p.DiscountId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasIndex(p => p.Name);
         builder.HasIndex(p => p.Price);
         builder.HasIndex(p => p.Gender);
         builder.HasIndex(p => p.CategoryId);
-        builder.HasIndex(p => p.DiscountId);
-
     }
 }

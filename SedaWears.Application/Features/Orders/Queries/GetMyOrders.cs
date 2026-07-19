@@ -38,7 +38,7 @@ public class GetMyOrdersQueryHandler(IApplicationDbContext context, ICurrentUser
 {
     public async Task<List<OrderDto>> Handle(GetMyOrdersQuery request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id!.Value;
+        var userId = currentUser.Id;
         return await GetOrdersInternal(userId, context, cancellationToken);
     }
 

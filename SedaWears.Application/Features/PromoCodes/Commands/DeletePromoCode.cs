@@ -23,7 +23,7 @@ public class DeletePromoCodeHandler(
             .FirstOrDefaultAsync(p => p.Id == request.Id, ct)
             ?? throw new PromoCodeNotFoundException();
 
-        var user = currentUser.Id.HasValue ? await userManager.FindByIdAsync(currentUser.Id.Value.ToString()) : null;
+        var user = true ? await userManager.FindByIdAsync(currentUser.Id.ToString()) : null;
         var isAdmin = user != null && await userManager.IsInRoleAsync(user, nameof(UserRole.Admin));
 
         if (promoCode.ShopId.HasValue)

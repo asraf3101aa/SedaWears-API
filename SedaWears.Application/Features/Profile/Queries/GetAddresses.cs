@@ -15,10 +15,10 @@ public class GetAddressesQueryHandler(IApplicationDbContext dbContext, ICurrentU
 {
     public async Task<List<AddressDto>> Handle(GetAddressesQuery request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id ?? throw new UnauthorizedAccessException();
+        var userId = currentUser.Id;
 
         return await fusionCache.GetOrSetAsync<List<AddressDto>>(
-            CacheKeys.ProfileAddresses(userId),
+            CacheKeys.UserAddresses(userId),
             async (ctx, token) =>
             {
                 var addresses = await dbContext.Addresses

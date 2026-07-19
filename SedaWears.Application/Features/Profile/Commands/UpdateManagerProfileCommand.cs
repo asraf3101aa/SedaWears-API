@@ -27,7 +27,7 @@ public class UpdateManagerProfileCommandHandler(IApplicationDbContext dbContext,
 {
     public async Task Handle(UpdateManagerProfileCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id!.Value;
+        var userId = currentUser.Id;
 
         var rowsAffected = await dbContext.Users
             .Where(u => u.Id == userId)
@@ -42,6 +42,6 @@ public class UpdateManagerProfileCommandHandler(IApplicationDbContext dbContext,
             throw new UserNotFoundException("User not found.");
         }
 
-        await fusionCache.RemoveAsync(CacheKeys.Profile(userId), token: cancellationToken);
+        await fusionCache.RemoveAsync(CacheKeys.User(userId), token: cancellationToken);
     }
 }

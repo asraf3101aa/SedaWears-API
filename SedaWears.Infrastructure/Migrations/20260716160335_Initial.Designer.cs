@@ -9,18 +9,18 @@ using SedaWears.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SedaWears.Infrastructure.Persistence.Migrations
+namespace SedaWears.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260701113050_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260716160335_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -268,7 +268,7 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int?>("ShopId")
+                    b.Property<int>("ShopId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -286,52 +286,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                         .HasFilter("\"ShopId\" IS NOT NULL");
 
                     b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("SedaWears.Domain.Entities.Discount", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<decimal>("DiscountPercentage")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EndDate");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("Name");
-
-                    b.HasIndex("StartDate");
-
-                    b.ToTable("Discounts");
                 });
 
             modelBuilder.Entity("SedaWears.Domain.Entities.Guest", b =>
@@ -624,9 +578,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                         .HasMaxLength(5000)
                         .HasColumnType("character varying(5000)");
 
-                    b.Property<int?>("DiscountId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -650,8 +601,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("DiscountId");
 
                     b.HasIndex("Gender");
 
@@ -1140,7 +1089,8 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                     b.HasOne("SedaWears.Domain.Entities.Shop", "Shop")
                         .WithMany()
                         .HasForeignKey("ShopId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Shop");
                 });
@@ -1237,18 +1187,11 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SedaWears.Domain.Entities.Discount", "Discount")
-                        .WithMany("Products")
-                        .HasForeignKey("DiscountId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("SedaWears.Domain.Entities.Shop", null)
                         .WithMany("Products")
                         .HasForeignKey("ShopId");
 
                     b.Navigation("Category");
-
-                    b.Navigation("Discount");
                 });
 
             modelBuilder.Entity("SedaWears.Domain.Entities.ProductImage", b =>
@@ -1359,11 +1302,6 @@ namespace SedaWears.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("SedaWears.Domain.Entities.Category", b =>
-                {
-                    b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("SedaWears.Domain.Entities.Discount", b =>
                 {
                     b.Navigation("Products");
                 });

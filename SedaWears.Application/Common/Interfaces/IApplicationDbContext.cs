@@ -10,6 +10,8 @@ public interface IApplicationDbContext
     DbSet<Category> Categories { get; }
     DbSet<Product> Products { get; }
     DbSet<User> Users { get; }
+    DbSet<IdentityRole<int>> Roles { get; }
+    DbSet<IdentityUserRole<int>> UserRoles { get; }
     DbSet<Order> Orders { get; }
     DbSet<OrderItem> OrderItems { get; }
     DbSet<NewsletterSubscriber> NewsletterSubscribers { get; }
@@ -25,7 +27,6 @@ public interface IApplicationDbContext
     DbSet<InvitedShopOwner> InvitedShopOwners { get; }
     DbSet<InvitedShopManager> InvitedShopManagers { get; }
     DbSet<WishlistItem> WishlistItems { get; }
-    DbSet<Discount> Discounts { get; }
     DbSet<Guest> Guests { get; }
     DbSet<PromoCode> PromoCodes { get; }
 

@@ -1,6 +1,3 @@
 namespace SedaWears.Application.Features.Auth.Models;
 
-public record GoogleLoginRequest(
-    string? IdToken,
-    bool RememberMe = false
-);
+public record GoogleLoginRequest(string? IdToken);

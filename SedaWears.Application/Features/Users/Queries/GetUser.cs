@@ -16,14 +16,14 @@ public record GetUserQuery(UserRole? Role = null, int? Id = null) : IRequest<Use
 
 public class GetUserHandler(
     UserManager<User> userManager,
+    IApplicationDbContext dbContext,
     ICurrentUser currentUser,
-    IOriginContext originContext,
     IOptions<OpeninaryConfig> configOptions) : IRequestHandler<GetUserQuery, UserDto>
 {
     public async Task<UserDto> Handle(GetUserQuery request, CancellationToken ct)
     {
-        var role = request.Role ?? originContext.CurrentRole;
-        var userId = request.Id ?? currentUser.Id!.Value;
+        var role = request.Role ?? UserRole.Customer;
+        var userId = request.Id ?? currentUser.Id;
 
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user == null || !await userManager.IsInRoleAsync(user, role.ToString()))
@@ -32,7 +32,7 @@ public class GetUserHandler(
         return await userManager.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .ProjectToUser(configOptions.Value.BaseUrl)
+            .ProjectToUser(configOptions.Value.BaseUrl, dbContext)
             .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException($"{role} not found.");
     }

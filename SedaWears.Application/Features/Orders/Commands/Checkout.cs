@@ -62,9 +62,9 @@ public class CheckoutHandler(IApplicationDbContext context, ICurrentUser current
         int? userId = null;
         int? guestId = null;
 
-        if (currentUser.Id.HasValue)
+        if (true)
         {
-            userId = currentUser.Id!.Value;
+            userId = currentUser.Id;
         }
         else
         {
@@ -148,9 +148,9 @@ public class CheckoutHandler(IApplicationDbContext context, ICurrentUser current
                 
             if (product == null) throw new ProductNotFoundException();
 
-            if (!shopIdSet && product.Category?.ShopId != null)
+            if (!shopIdSet && product.Category != null)
             {
-                order.ShopId = product.Category.ShopId.Value;
+                order.ShopId = product.Category.ShopId;
                 shopIdSet = true;
             }
 

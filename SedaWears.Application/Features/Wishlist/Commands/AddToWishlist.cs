@@ -12,7 +12,7 @@ public class AddToWishlistHandler(IApplicationDbContext dbContext, ICurrentUser 
 {
     public async Task Handle(AddToWishlistCommand request, CancellationToken ct)
     {
-        var userId = currentUser.Id ?? throw new UnauthorizedAccessException();
+        var userId = currentUser.Id;
 
         var productExists = await dbContext.Products.AnyAsync(p => p.Id == request.ProductId, ct);
         if (!productExists) throw new ProductNotFoundException();

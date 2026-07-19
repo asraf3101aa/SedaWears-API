@@ -66,11 +66,7 @@ public class AdminInvitationHandlers(
 
         var url = $"{hostUrlsConfigOptions.Value.Admin}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}";
 
-        var subject = "SedaWears Admin Invitation";
-        var body = $"<p>You have been invited as an <b>Admin</b> to the SedaWears platform.</p>" +
-                   $"<p>Click <a href='{url}'>here</a> to accept the invitation and set up your account password.</p>";
-
-        await emailService.SendEmailAsync(invitation.Email, subject, body);
+        await emailService.SendAdminInvitationEmailAsync(invitation.Email, url);
     }
 
     public async Task Handle(ResendAdminInvitationCommand request, CancellationToken ct)
@@ -87,11 +83,7 @@ public class AdminInvitationHandlers(
 
         var url = $"{hostUrlsConfigOptions.Value.Admin}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}";
 
-        var subject = "SedaWears Admin Invitation";
-        var body = $"<p>You have been invited as an <b>Admin</b> to the SedaWears platform.</p>" +
-                   $"<p>Click <a href='{url}'>here</a> to accept the invitation and set up your account password.</p>";
-
-        await emailService.SendEmailAsync(invitation.Email, subject, body);
+        await emailService.SendAdminInvitationEmailAsync(invitation.Email, url);
     }
 }
 

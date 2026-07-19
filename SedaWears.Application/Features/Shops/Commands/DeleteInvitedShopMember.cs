@@ -1,8 +1,8 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
 
 namespace SedaWears.Application.Features.Shops.Commands;
 

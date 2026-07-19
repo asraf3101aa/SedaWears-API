@@ -29,7 +29,8 @@ public static class ApplicationBuilderExtensions
     {
         app.UseForwardedHeaders();
 
-        app.UseExceptionHandler();
+        app.UseExceptionHandler("/500");
+        app.UseStatusCodePagesWithReExecute("/404");
 
         app.UseCors();
 
@@ -38,6 +39,7 @@ public static class ApplicationBuilderExtensions
         app.UseAuthorization();
 
         app.MapControllers();
+
         app.MapHealthChecks("/health");
 
         return app;

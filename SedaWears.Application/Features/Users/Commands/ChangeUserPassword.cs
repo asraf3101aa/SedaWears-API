@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using SedaWears.Application.Common.Exceptions;
 using SedaWears.Domain.Entities;
+using SedaWears.Domain.Enums;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Validators;
 
@@ -24,13 +25,12 @@ public class ChangeUserPasswordValidator : AbstractValidator<ChangeUserPasswordC
 
 public class ChangeUserPasswordHandler(
     UserManager<User> userManager,
-    IOriginContext originContext,
     ICurrentUser currentUser) : IRequestHandler<ChangeUserPasswordCommand>
 {
     public async Task Handle(ChangeUserPasswordCommand request, CancellationToken ct)
     {
-        var userId = currentUser.Id!.Value;
-        var role = originContext.CurrentRole;
+        var userId = currentUser.Id;
+        var role = UserRole.Customer;
 
         var user = await userManager.FindByIdAsync(userId.ToString());
 

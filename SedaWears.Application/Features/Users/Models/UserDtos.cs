@@ -1,3 +1,4 @@
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Users.Models;
 
@@ -24,13 +25,15 @@ public record UserDto(
     string LastName,
     string? Email,
     string? Phone,
-    string? AvatarFileName,
+    Uri? AvatarUrl,
     bool IsEmailConfirmed,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    List<UserRole> Roles
 );
 
 public record InvitedUserDto(
     int Id,
     string Email,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    Uri InvitationUrl
 );

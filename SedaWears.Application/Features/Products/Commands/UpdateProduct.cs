@@ -11,7 +11,7 @@ using ZiggyCreatures.Caching.Fusion;
 namespace SedaWears.Application.Features.Products.Commands;
 
 public record UpdateProductCommand(
-    int? Id,
+    int Id,
     string? Name,
     string? Description,
     decimal? Price,
@@ -24,9 +24,6 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
 {
     public UpdateProductValidator()
     {
-        RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("A valid product identifier is required.")
-            .GreaterThan(0).WithMessage("A valid product identifier is required.");
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Product name is required.")
@@ -59,7 +56,7 @@ public class UpdateProductHandler(IApplicationDbContext dbContext, IFusionCache 
         var product = await dbContext.Products
             .Include(p => p.Images)
             .Include(p => p.Category)
-            .FirstOrDefaultAsync(p => p.Id == request.Id!.Value, ct) ?? throw new ProductNotFoundException();
+            .FirstOrDefaultAsync(p => p.Id == request.Id, ct) ?? throw new ProductNotFoundException();
 
         if (request.ShopId.HasValue)
         {
@@ -93,6 +90,6 @@ public class UpdateProductHandler(IApplicationDbContext dbContext, IFusionCache 
         }
 
         await dbContext.SaveChangesAsync(ct);
-        await fusionCache.RemoveAsync(CacheKeys.Product(request.Id!.Value), token: ct);
+        await fusionCache.RemoveAsync(CacheKeys.Product(request.Id), token: ct);
     }
 }

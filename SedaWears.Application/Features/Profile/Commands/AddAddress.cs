@@ -39,7 +39,7 @@ public class AddAddressCommandHandler(IApplicationDbContext dbContext, ICurrentU
 {
     public async Task<AddressDto> Handle(AddAddressCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id!.Value;
+        var userId = currentUser.Id;
         var user = await dbContext.Users.Include(u => u.Addresses).FirstOrDefaultAsync(u => u.Id == userId, cancellationToken) ?? throw new UnauthorizedAccessException();
 
         var entity = new Address
@@ -57,7 +57,7 @@ public class AddAddressCommandHandler(IApplicationDbContext dbContext, ICurrentU
         user.Addresses.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        await fusionCache.RemoveAsync(CacheKeys.ProfileAddresses(userId), token: cancellationToken);
+        await fusionCache.RemoveAsync(CacheKeys.UserAddresses(userId), token: cancellationToken);
 
         return new AddressDto(entity.Id, entity.Label, entity.FullName, entity.Email, entity.Phone, entity.Street, entity.City, entity.ZipCode);
     }

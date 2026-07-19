@@ -1,0 +1,29 @@
+{
+  "enabledPlugins": {
+    "csharp-lsp@claude-plugins-official": true,
+    "microsoft-docs@claude-plugins-official": true,
+    "dotnet@dotnet-agent-skills": true,
+    "dotnet-aspnetcore@dotnet-agent-skills": true,
+    "dotnet-data@dotnet-agent-skills": true,
+    "dotnet-diag@dotnet-agent-skills": true,
+    "dotnet-msbuild@dotnet-agent-skills": true,
+    "dotnet-nuget@dotnet-agent-skills": true,
+    "dotnet-advanced@dotnet-agent-skills": true,
+    "frontend-design@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/anthropics/claude-plugins-official.git"
+      }
+    },
+    "dotnet-agent-skills": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/dotnet/skills.git"
+      }
+    }
+  }
+}

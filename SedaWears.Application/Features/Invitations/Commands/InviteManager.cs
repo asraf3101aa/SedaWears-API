@@ -31,12 +31,34 @@ public class InviteManagerValidator : AbstractValidator<InviteManagerCommand>
 public class InviteManagerHandler(
     IApplicationDbContext dbContext,
     IEmailService emailService,
+    IUserService userService,
+    IOriginContext originContext,
+    ICurrentUser currentUser,
     IOptions<HostUrlsConfig> hostUrlsConfigOptions) : IRequestHandler<InviteManagerCommand>
 {
     public async Task Handle(InviteManagerCommand request, CancellationToken ct)
     {
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
+
+        if (request.ShopId == 1)
+            throw new ForbiddenException("Manager cant be added to admin shop.");
+
+
+        if (!user.Roles.Contains(originContext.OriginRole))
+            throw new ForbiddenException("You are not authorized to invite a shop manager.");
+
+        if (originContext.OriginRole == UserRole.Owner)
+        {
+            var isOwner = await dbContext.ShopOwners
+                .AnyAsync(so => so.ShopId == request.ShopId && so.UserId == currentUser.Id, ct);
+
+            if (!isOwner)
+                throw new ForbiddenException("You are not authorized to invite a manager for this shop.");
+        }
+
         var shop = await dbContext.Shops.AsNoTracking().FirstOrDefaultAsync(s => s.Id == request.ShopId, ct)
             ?? throw new ShopNotFoundException();
+
 
         var isManager = await dbContext.ShopManagers
             .AnyAsync(sm => sm.ShopId == request.ShopId && sm.User.Email == request.Email, ct);
@@ -64,10 +86,7 @@ public class InviteManagerHandler(
 
         var url = $"{hostUrlsConfigOptions.Value.Manager}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
 
-        await emailService.SendEmailAsync(
-            invitation.Email,
-            $"SedaWears Shop Manager Invitation for {shop.Name}",
-            $"<p>You have been invited as a Shop Manager for <b>{shop.Name}</b> on SedaWears.</p><p>Click <a href='{url}'>here</a> to accept the invitation and set your password.</p>");
+        await emailService.SendManagerInvitationEmailAsync(invitation.Email, shop.Name, url);
     }
 }
 
@@ -207,10 +226,7 @@ public class ResendShopManagerInvitationHandler(
 
         var url = $"{hostUrlsConfigOptions.Value.Manager}/accept-invitation?email={invitation.Email}&token={HttpUtility.UrlEncode(token)}&shopId={request.ShopId}";
 
-        var subject = $"SedaWears Shop Manager Invitation for {shop.Name}";
-        var body = $"<p>You have been invited as a Shop Manager for <b>{shop.Name}</b> on SedaWears.</p><p>Click <a href='{url}'>here</a> to accept the invitation and set your password.</p>";
-
-        await emailService.SendEmailAsync(invitation.Email, subject, body);
+        await emailService.SendManagerInvitationEmailAsync(invitation.Email, shop.Name, url);
     }
 }
 

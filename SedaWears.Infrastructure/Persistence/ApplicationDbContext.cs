@@ -27,7 +27,6 @@ public class ApplicationDbContext(
     public DbSet<InvitedShopOwner> InvitedShopOwners => Set<InvitedShopOwner>();
     public DbSet<InvitedShopManager> InvitedShopManagers => Set<InvitedShopManager>();
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
-    public DbSet<Discount> Discounts => Set<Discount>();
     public DbSet<Guest> Guests => Set<Guest>();
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     DbSet<User> IApplicationDbContext.Users => Users;

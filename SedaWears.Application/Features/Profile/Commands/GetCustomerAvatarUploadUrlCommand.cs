@@ -29,7 +29,7 @@ public class GetCustomerAvatarUploadUrlCommandHandler(
 {
     public async Task<ImageUploadUrlResponse> Handle(GetCustomerAvatarUploadUrlCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.Id!.Value;
+        var userId = currentUser.Id;
         var user = await userManager.FindByIdAsync(userId.ToString()) ?? throw new UserNotFoundException("Profile not found.");
 
         var extension = Path.GetExtension(request.FileName);

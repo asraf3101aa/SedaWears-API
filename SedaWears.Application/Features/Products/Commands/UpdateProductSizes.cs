@@ -16,8 +16,6 @@ public class UpdateProductSizesValidator : AbstractValidator<UpdateProductSizesC
 {
     public UpdateProductSizesValidator()
     {
-        RuleFor(x => x.Id)
-            .GreaterThan(0).WithMessage("A valid product identifier is required.");
 
         RuleFor(x => x.Sizes)
             .NotEmpty().WithMessage("At least one size with stock must be provided.");
