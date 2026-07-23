@@ -1,6 +1,6 @@
 namespace SedaWears.Application.Features.Categories.Models;
 
-public enum CategorySortBy
+public enum CategorySortField
 {
     DisplayOrder,
     Name,

@@ -11,7 +11,10 @@ using System.Web;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record ForgotPasswordCommand(string? Email) : IRequest;
+public record ForgotPasswordCommand(string? Email) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+}
 
 public class ForgotPasswordValidator : AbstractValidator<ForgotPasswordCommand>
 {

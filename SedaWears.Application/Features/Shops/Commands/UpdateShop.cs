@@ -12,7 +12,14 @@ public record UpdateShopCommand(
     string? SubdomainSlug,
     string? Description,
     string? LogoFileName = null,
-    string? BannerFileName = null) : IRequest;
+    string? BannerFileName = null) : IRequest
+{
+    public string? Name { get; init; } = Name?.Trim();
+    public string? SubdomainSlug { get; init; } = SubdomainSlug?.Trim();
+    public string? Description { get; init; } = Description?.Trim();
+    public string? LogoFileName { get; init; } = LogoFileName?.Trim();
+    public string? BannerFileName { get; init; } = BannerFileName?.Trim();
+}
 
 public class UpdateShopValidator : AbstractValidator<UpdateShopCommand>
 {
@@ -33,9 +40,9 @@ public class UpdateShopValidator : AbstractValidator<UpdateShopCommand>
             .MustAsync(BeUniqueSubdomainSlug).WithMessage("Subdomain slug already exists.");
 
         RuleFor(x => x.Description)
+            .NotEmpty().WithMessage("Description is required.")
             .MinimumLength(10).WithMessage("Description must be at least 10 characters long.")
-            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.")
-            .When(x => !string.IsNullOrEmpty(x.Description));
+            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.");
 
         RuleFor(x => x.LogoFileName)
             .MaximumLength(255).WithMessage("Logo file name must not exceed 255 characters.");
@@ -64,7 +71,7 @@ public class UpdateShopHandler(IApplicationDbContext dbContext) : IRequestHandle
 
         shop.Name = request.Name!;
         shop.SubdomainSlug = request.SubdomainSlug!;
-        shop.Description = request.Description;
+        shop.Description = request.Description!;
         shop.LogoFileName = request.LogoFileName ?? shop.LogoFileName;
         shop.BannerFileName = request.BannerFileName ?? shop.BannerFileName;
 

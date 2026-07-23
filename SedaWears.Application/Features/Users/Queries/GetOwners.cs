@@ -10,7 +10,7 @@ namespace SedaWears.Application.Features.Users.Queries;
 public record GetOwnersQuery(
     int PageNumber = 1,
     int PageSize = 10,
-    UsersSortBy SortBy = UsersSortBy.CreatedAt,
+    UsersSortField SortBy = UsersSortField.CreatedAt,
     SortOrder SortOrder = SortOrder.Desc)
     : IRequest<PaginatedList<UserDto>>, IPaginatedQuery;
 

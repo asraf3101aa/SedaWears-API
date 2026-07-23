@@ -23,7 +23,7 @@ public class InvitationsController(ISender mediator) : ControllerBase
             request?.LastName?.Trim(),
             request?.Password));
 
-        return Ok(new { Message = "Invitation accepted successfully. You can now login with your credentials." });
+        return StatusCode(StatusCodes.Status201Created);
     }
 
     [HttpPost("accept-manager")]
@@ -37,7 +37,7 @@ public class InvitationsController(ISender mediator) : ControllerBase
             request?.LastName?.Trim(),
             request?.Password));
 
-        return Ok(new { Message = "Invitation accepted successfully. You can now login with your credentials." });
+        return StatusCode(StatusCodes.Status201Created);
     }
 
     [HttpPost("accept-admin")]
@@ -50,7 +50,7 @@ public class InvitationsController(ISender mediator) : ControllerBase
             request?.LastName?.Trim(),
             request?.Password));
 
-        return Ok(new { Message = "Invitation accepted successfully. You can now login with your credentials." });
+        return StatusCode(StatusCodes.Status201Created);
     }
 
     [HttpGet("owner-details")]

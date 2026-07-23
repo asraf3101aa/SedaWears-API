@@ -13,7 +13,10 @@ using SedaWears.Application.Features.Invitations.Models;
 
 namespace SedaWears.Application.Features.Invitations.Commands;
 
-public record InviteManagerCommand(int? ShopId, string? Email) : IRequest;
+public record InviteManagerCommand(int? ShopId, string? Email) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+}
 
 public class InviteManagerValidator : AbstractValidator<InviteManagerCommand>
 {
@@ -96,7 +99,13 @@ public record AcceptShopManagerInvitationCommand(
     string? Token,
     string? FirstName,
     string? LastName,
-    string? Password) : IRequest;
+    string? Password) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+    public string? Token { get; init; } = Token?.Trim();
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+}
 
 public class AcceptShopManagerInvitationValidator : AbstractValidator<AcceptShopManagerInvitationCommand>
 {

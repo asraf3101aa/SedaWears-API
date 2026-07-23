@@ -29,6 +29,7 @@ public class GetAddressesQueryHandler(IApplicationDbContext dbContext, ICurrentU
                 return addresses.Select(a => new AddressDto(
                     a.Id, a.Label, a.FullName, a.Email, a.Phone, a.Street, a.City, a.ZipCode)).ToList();
             },
+            CachePolicies.UserAddresses,
             token: cancellationToken);
     }
 }

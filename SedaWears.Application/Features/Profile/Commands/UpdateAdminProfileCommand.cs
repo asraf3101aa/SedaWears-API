@@ -9,7 +9,12 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Profile.Commands;
 
-public record UpdateAdminProfileCommand(string? FirstName, string? LastName, string? Phone) : IRequest;
+public record UpdateAdminProfileCommand(string? FirstName, string? LastName, string? Phone) : IRequest
+{
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+    public string? Phone { get; init; } = Phone?.Trim();
+}
 
 public class UpdateAdminProfileCommandValidator : AbstractValidator<UpdateAdminProfileCommand>
 {

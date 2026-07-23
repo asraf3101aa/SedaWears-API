@@ -14,23 +14,15 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
 
         builder.Property(t => t.Description)
-            .HasMaxLength(1000);
+            .HasMaxLength(1000)
+            .IsRequired();
 
-        // 1. Unique index for shop-specific categories
         builder.HasIndex(t => new { t.ShopId, t.Name })
-            .HasFilter("\"ShopId\" IS NOT NULL")
             .IsUnique();
 
-
-        // 2. Unique index for global categories (ShopId is null)
-        builder.HasIndex(t => t.Name)
-            .HasFilter("\"ShopId\" IS NULL")
-            .IsUnique();
-
-        
         builder.HasIndex(t => t.DisplayOrder);
         builder.HasIndex(t => t.ShopId);
-        
+
         builder.HasOne(t => t.Shop)
             .WithMany()
             .HasForeignKey(t => t.ShopId)

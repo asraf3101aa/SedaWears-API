@@ -10,7 +10,7 @@ public class Shop : BaseEntity
 {
     public string Name { get; set; } = null!;
     public string SubdomainSlug { get; set; } = null!;
-    public string? Description { get; set; }
+    public string Description { get; set; } = null!;
     public string? BannerFileName { get; set; }
     public string? LogoFileName { get; set; }
 
@@ -76,7 +76,7 @@ public class InvitedShopManager : InvitedShopMember
 public class Category : BaseEntity
 {
     public string Name { get; set; } = null!;
-    public string? Description { get; set; }
+    public string Description { get; set; } = null!;
     public int DisplayOrder { get; set; }
 
     public int ShopId { get; set; }

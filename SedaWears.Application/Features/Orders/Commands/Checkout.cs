@@ -8,14 +8,26 @@ using SedaWears.Application.Features.Orders.Models;
 
 namespace SedaWears.Application.Features.Orders.Commands;
 
-public record CheckoutAddress(string? FirstName, string? LastName, string? Phone, string? Street, string? City, string? ZipCode);
+public record CheckoutAddress(string? FirstName, string? LastName, string? Phone, string? Street, string? City, string? ZipCode)
+{
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+    public string? Phone { get; init; } = Phone?.Trim();
+    public string? Street { get; init; } = Street?.Trim();
+    public string? City { get; init; } = City?.Trim();
+    public string? ZipCode { get; init; } = ZipCode?.Trim();
+}
 public record CheckoutItem(int? ProductId, int? Quantity);
 
 public record CheckoutCommand(
     string? CustomerEmail,
     CheckoutAddress? ShippingAddress,
     List<CheckoutItem>? Items,
-    string? PromoCode) : ICommand<CheckoutDto>;
+    string? PromoCode) : ICommand<CheckoutDto>
+{
+    public string? CustomerEmail { get; init; } = CustomerEmail?.Trim();
+    public string? PromoCode { get; init; } = PromoCode?.Trim();
+}
 
 public class CheckoutValidator : AbstractValidator<CheckoutCommand>
 {
@@ -169,7 +181,7 @@ public class CheckoutHandler(IApplicationDbContext context, ICurrentUser current
 
         if (!string.IsNullOrEmpty(request.PromoCode))
         {
-            var codeUpper = request.PromoCode.Trim().ToUpperInvariant();
+            var codeUpper = request.PromoCode.ToUpperInvariant();
             var promoCode = await context.PromoCodes
                 .FirstOrDefaultAsync(p => p.Code.ToUpper() == codeUpper && p.IsActive, ct);
 

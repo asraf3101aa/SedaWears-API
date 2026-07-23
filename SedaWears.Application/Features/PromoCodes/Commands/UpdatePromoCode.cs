@@ -22,7 +22,10 @@ public record UpdatePromoCodeCommand(
     DateTime StartDate,
     DateTime EndDate,
     int? LimitPerUser,
-    bool IsActive) : IRequest;
+    bool IsActive) : IRequest
+{
+    public string? Description { get; init; } = Description?.Trim();
+}
 
 public class UpdatePromoCodeValidator : AbstractValidator<UpdatePromoCodeCommand>
 {

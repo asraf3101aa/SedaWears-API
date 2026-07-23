@@ -22,7 +22,11 @@ public record CreatePromoCodeCommand(
     DateTime StartDate,
     DateTime EndDate,
     int? LimitPerUser,
-    int? ShopId) : IRequest<int>;
+    int? ShopId) : IRequest<int>
+{
+    public string Code { get; init; } = Code.Trim();
+    public string? Description { get; init; } = Description?.Trim();
+}
 
 public class CreatePromoCodeValidator : AbstractValidator<CreatePromoCodeCommand>
 {
@@ -94,7 +98,7 @@ public class CreatePromoCodeHandler(
             throw new ForbiddenException("Only administrators can create global promo codes.");
         }
 
-        var codeUpper = request.Code.Trim().ToUpperInvariant();
+        var codeUpper = request.Code.ToUpperInvariant();
 
         // Check uniqueness based on shop vs global
         bool exists;

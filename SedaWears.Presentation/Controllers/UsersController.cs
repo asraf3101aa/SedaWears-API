@@ -18,7 +18,7 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> GetAdmins(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        [FromQuery] UsersSortField sortBy = UsersSortField.CreatedAt,
         [FromQuery] SortOrder sortOrder = SortOrder.Desc)
         => Ok(await mediator.Send(new GetAdminsQuery(pageNumber, pageSize, sortBy, sortOrder)));
 
@@ -27,7 +27,7 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> GetInvitedAdmins(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] InvitedAdminsSortBy sortBy = InvitedAdminsSortBy.CreatedAt,
+        [FromQuery] InvitedAdminsSortField sortBy = InvitedAdminsSortField.CreatedAt,
         [FromQuery] SortOrder sortOrder = SortOrder.Desc)
         => Ok(await mediator.Send(new GetInvitedAdminsQuery(pageNumber, pageSize, sortBy, sortOrder)));
 
@@ -36,7 +36,7 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> InviteAdmin([FromBody] InviteAdminRequest? request)
     {
         await mediator.Send(new InviteAdminCommand(request?.Email?.Trim()));
-        return Ok(new { Message = "Invitation sent successfully." });
+        return StatusCode(StatusCodes.Status201Created);
     }
 
     [HttpGet("customers")]
@@ -44,7 +44,7 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> GetCustomers(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        [FromQuery] UsersSortField sortBy = UsersSortField.CreatedAt,
         [FromQuery] SortOrder sortOrder = SortOrder.Desc)
         => Ok(await mediator.Send(new GetCustomersQuery(pageNumber, pageSize, sortBy, sortOrder)));
 
@@ -61,7 +61,7 @@ public class UsersController(ISender mediator) : ControllerBase
             id,
             request?.FirstName?.Trim(),
             request?.LastName?.Trim()));
-        return Ok(new { message = "User updated successfully." });
+        return NoContent();
     }
 
     [HttpDelete("admins/{id:int}")]
@@ -69,7 +69,7 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> DeleteAdmin(int id)
     {
         await mediator.Send(new DeleteAdminCommand(id));
-        return Ok(new { message = "Admin deleted successfully." });
+        return NoContent();
     }
 
     [HttpDelete("customers/{id:int}")]
@@ -77,7 +77,7 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> DeleteCustomer(int id)
     {
         await mediator.Send(new DeleteCustomerCommand(id));
-        return Ok(new { message = "Customer deleted successfully." });
+        return NoContent();
     }
 
     [HttpPost("admins/{id:int}/resend-invitation")]
@@ -85,7 +85,7 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> ResendAdminInvitation(int id)
     {
         await mediator.Send(new ResendAdminInvitationCommand(id));
-        return Ok(new { message = "Invitation resent successfully." });
+        return NoContent();
     }
 
     [HttpDelete("admins/{id:int}/invitation")]
@@ -93,6 +93,6 @@ public class UsersController(ISender mediator) : ControllerBase
     public async Task<IActionResult> DeleteInvitedAdmin(int id)
     {
         await mediator.Send(new DeleteInvitedAdminCommand(id));
-        return Ok(new { message = "Invitation deleted successfully." });
+        return NoContent();
     }
 }

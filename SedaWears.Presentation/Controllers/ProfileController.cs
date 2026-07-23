@@ -25,7 +25,7 @@ public class ProfileController(ISender mediator) : ControllerBase
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest? request)
     {
         await mediator.Send(new UpdateProfileCommand(request?.FirstName, request?.LastName, request?.Phone));
-        return Ok(new { message = "Profile updated successfully." });
+        return NoContent();
     }
 
     [HttpPatch("password")]
@@ -33,6 +33,6 @@ public class ProfileController(ISender mediator) : ControllerBase
     public async Task<IActionResult> ChangePassword([FromBody] ChangeUserPasswordRequest? request)
     {
         await mediator.Send(new ChangeUserPasswordCommand(request?.OldPassword, request?.NewPassword));
-        return Ok(new { message = "Password changed successfully." });
+        return NoContent();
     }
 }

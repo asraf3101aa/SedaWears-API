@@ -11,7 +11,12 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Profile.Commands;
 
-public record UpdateProfileCommand(string? FirstName, string? LastName, string? Phone) : IRequest;
+public record UpdateProfileCommand(string? FirstName, string? LastName, string? Phone) : IRequest
+{
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+    public string? Phone { get; init; } = Phone?.Trim();
+}
 
 public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileCommand>
 {

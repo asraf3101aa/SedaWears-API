@@ -7,7 +7,11 @@ using SedaWears.Application.Common.Interfaces;
 
 namespace SedaWears.Application.Features.Shops.Commands;
 
-public record UpdateShopMemberCommand(int ShopId, int UserId, string? FirstName, string? LastName) : IRequest;
+public record UpdateShopMemberCommand(int ShopId, int UserId, string? FirstName, string? LastName) : IRequest
+{
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+}
 
 public class UpdateShopMemberHandler(IApplicationDbContext dbContext, IFusionCache fusionCache) : IRequestHandler<UpdateShopMemberCommand>
 {

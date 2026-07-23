@@ -13,7 +13,7 @@ using SedaWears.Domain.Enums;
 namespace SedaWears.Application.Features.Shops.Queries;
 
 public record GetShopsQuery(
-    ShopSortBy SortBy,
+    ShopSortField SortBy,
     SortOrder SortOrder,
     string? Search,
     int PageNumber,
@@ -46,7 +46,7 @@ public class GetShopsHandler(
             var userId = currentUser.Id;
             query = originContext.OriginRole switch
             {
-                UserRole.Admin => query,
+                UserRole.Admin => query.Where(s => s.Id != 1),
                 UserRole.Owner => query.Where(s => s.Id != 1 && s.Owners.Any(o => o.UserId == userId)),
                 UserRole.Manager => query.Where(s => s.Id != 1 && s.Managers.Any(m => m.UserId == userId)),
                 _ => throw new ForbiddenException("You are not authorized to view shops.")
@@ -63,10 +63,10 @@ public class GetShopsHandler(
         var desc = request.SortOrder == SortOrder.Desc;
         query = request.SortBy switch
         {
-            ShopSortBy.Name => desc ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
-            ShopSortBy.Slug => desc ? query.OrderByDescending(s => s.SubdomainSlug) : query.OrderBy(s => s.SubdomainSlug),
-            ShopSortBy.IsActive => desc ? query.OrderByDescending(s => s.IsActive) : query.OrderBy(s => s.IsActive),
-            ShopSortBy.CreatedAt => desc ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt),
+            ShopSortField.Name => desc ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
+            ShopSortField.Slug => desc ? query.OrderByDescending(s => s.SubdomainSlug) : query.OrderBy(s => s.SubdomainSlug),
+            ShopSortField.IsActive => desc ? query.OrderByDescending(s => s.IsActive) : query.OrderBy(s => s.IsActive),
+            ShopSortField.CreatedAt => desc ? query.OrderByDescending(s => s.CreatedAt) : query.OrderBy(s => s.CreatedAt),
             _ => query.OrderByDescending(s => s.CreatedAt)
         };
 

@@ -8,7 +8,11 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
-public record UpdateCategoryCommand(int Id, string? Name, string? Description, int ShopId) : IRequest;
+public record UpdateCategoryCommand(int Id, string? Name, string? Description, int ShopId) : IRequest
+{
+    public string? Name { get; init; } = Name?.Trim();
+    public string? Description { get; init; } = Description?.Trim();
+}
 
 public class UpdateCategoryValidator : AbstractValidator<UpdateCategoryCommand>
 {
@@ -20,9 +24,9 @@ public class UpdateCategoryValidator : AbstractValidator<UpdateCategoryCommand>
             .MaximumLength(50).WithMessage("Name must not exceed 50 characters.");
 
         RuleFor(x => x.Description)
+            .NotEmpty().WithMessage("Description is required.")
             .MinimumLength(5).WithMessage("Description must be at least 5 characters.")
-            .MaximumLength(100).WithMessage("Description must not exceed 100 characters.")
-            .When(x => !string.IsNullOrEmpty(x.Description));
+            .MaximumLength(100).WithMessage("Description must not exceed 100 characters.");
     }
 }
 
@@ -55,7 +59,7 @@ public class UpdateCategoryHandler(
             ?? throw new CategoryNotFoundException();
 
         category.Name = request.Name!;
-        category.Description = request.Description;
+        category.Description = request.Description!;
 
         try
         {

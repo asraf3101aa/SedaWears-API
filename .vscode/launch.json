@@ -2,28 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch (dotnet watch)",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "dotnet",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/SedaWears.Presentation"
-            ],
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "ASPNETCORE_URLS": "http://localhost:7070"
-            },
-            "console": "integratedTerminal",
-            "requireExactSource": false,
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
-            }
-        },
-        {
             "name": "Launch (build & debug)",
             "type": "coreclr",
             "request": "launch",
@@ -32,20 +10,12 @@
             "args": [],
             "cwd": "${workspaceFolder}/SedaWears.Presentation",
             "stopAtEntry": false,
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "ASPNETCORE_URLS": "http://localhost:7070"
-            },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
             }
-        },
-        {
-            "name": "Attach to dotnet watch",
-            "type": "coreclr",
-            "request": "attach",
-            "processName": "SedaWears.Presentation",
-            "requireExactSource": false
         }
     ]
 }

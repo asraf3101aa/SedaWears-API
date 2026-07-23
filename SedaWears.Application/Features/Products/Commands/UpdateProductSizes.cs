@@ -10,7 +10,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Products.Commands;
 
-public record UpdateProductSizesCommand(int Id, List<ProductSizeDto>? Sizes) : IRequest<Unit>;
+public record UpdateProductSizesCommand(int ShopId, int CategoryId, int Id, List<ProductSizeDto>? Sizes) : IRequest<Unit>;
 
 public class UpdateProductSizesValidator : AbstractValidator<UpdateProductSizesCommand>
 {
@@ -28,7 +28,13 @@ public class UpdateProductSizesHandler(IApplicationDbContext dbContext, IFusionC
     {
         var product = await dbContext.Products
             .Include(p => p.SizeStocks)
+            .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == request.Id, ct) ?? throw new ProductNotFoundException();
+
+        if (product.Category.ShopId != request.ShopId || product.CategoryId != request.CategoryId)
+        {
+            throw new ProductNotFoundException();
+        }
 
         // Sync sizes
         product.SizeStocks.Clear();

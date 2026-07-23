@@ -5,7 +5,7 @@ public record ShopDto(
     int Id,
     string Name,
     string SubdomainSlug,
-    string? Description,
+    string Description,
     Uri? LogoUrl,
     Uri? BannerUrl,
     bool IsActive,

@@ -12,7 +12,7 @@ using SedaWears.Infrastructure.Persistence;
 namespace SedaWears.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260716160335_Initial")]
+    [Migration("20260722041245_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -275,15 +275,10 @@ namespace SedaWears.Infrastructure.Migrations
 
                     b.HasIndex("DisplayOrder");
 
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasFilter("\"ShopId\" IS NULL");
-
                     b.HasIndex("ShopId");
 
                     b.HasIndex("ShopId", "Name")
-                        .IsUnique()
-                        .HasFilter("\"ShopId\" IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("Categories");
                 });

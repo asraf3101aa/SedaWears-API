@@ -18,36 +18,36 @@
             }
         },
         {
-            "label": "watch",
+            "label": "clean",
             "command": "dotnet",
-            "type": "shell",
+            "type": "process",
             "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/SedaWears.Presentation"
+                "clean",
+                "${workspaceFolder}/SedaWears.slnx"
             ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "ASPNETCORE_ENVIRONMENT": "Development"
-                }
-            },
-            "isBackground": true,
-            "problemMatcher": {
-                "owner": "csharp",
-                "pattern": {
-                    "regexp": "^(.*)$",
-                    "file": 1,
-                    "location": 1,
-                    "message": 1
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": "^.*Building.*",
-                    "endsPattern": "^.*Now listening on.*"
-                }
-            }
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "restore",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "restore",
+                "${workspaceFolder}/SedaWears.slnx"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/SedaWears.Presentation/SedaWears.Presentation.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "problemMatcher": "$msCompile"
         }
     ]
 }

@@ -9,7 +9,11 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
-public record CreateCategoryCommand(string? Name, string? Description, int ShopId) : IRequest;
+public record CreateCategoryCommand(string? Name, string? Description, int ShopId) : IRequest<int>
+{
+    public string? Name { get; init; } = Name?.Trim();
+    public string? Description { get; init; } = Description?.Trim();
+}
 
 public class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
 {
@@ -21,9 +25,9 @@ public class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
             .MaximumLength(50).WithMessage("Name must not exceed 50 characters.");
 
         RuleFor(x => x.Description)
+            .NotEmpty().WithMessage("Description is required.")
             .MinimumLength(5).WithMessage("Description must be at least 5 characters.")
-            .MaximumLength(100).WithMessage("Description must not exceed 100 characters.")
-            .When(x => !string.IsNullOrEmpty(x.Description));
+            .MaximumLength(100).WithMessage("Description must not exceed 100 characters.");
     }
 }
 
@@ -31,9 +35,11 @@ public class CreateCategoryHandler(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
     IUserService userService,
-    IOriginContext originContext) : IRequestHandler<CreateCategoryCommand>
+    IOriginContext originContext) : IRequestHandler<CreateCategoryCommand, int>
 {
-    public async Task Handle(CreateCategoryCommand request, CancellationToken ct)
+    private const int MaxCategoriesPerShop = 7;
+
+    public async Task<int> Handle(CreateCategoryCommand request, CancellationToken ct)
     {
         var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
 
@@ -51,6 +57,10 @@ public class CreateCategoryHandler(
         if (!isAuthorized)
             throw new ShopNotFoundException();
 
+        var categoryCount = await dbContext.Categories.CountAsync(c => c.ShopId == request.ShopId, ct);
+        if (categoryCount >= MaxCategoriesPerShop)
+            throw new BadRequestException($"A shop cannot have more than {MaxCategoriesPerShop} categories.");
+
         var finalOrder = (await dbContext.Categories
             .Where(c => c.ShopId == request.ShopId)
             .MaxAsync(c => (int?)c.DisplayOrder, ct) ?? 0) + 1;
@@ -58,7 +68,7 @@ public class CreateCategoryHandler(
         var category = new Category
         {
             Name = request.Name!,
-            Description = request.Description,
+            Description = request.Description!,
             DisplayOrder = finalOrder,
             ShopId = request.ShopId
         };
@@ -76,5 +86,7 @@ public class CreateCategoryHandler(
         {
             throw new BadRequestException("Category with this name already exists.");
         }
+
+        return category.Id;
     }
 }

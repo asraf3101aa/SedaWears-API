@@ -31,7 +31,7 @@ public interface IUserService
         UserRole role,
         int pageNumber,
         int pageSize,
-        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        UsersSortField sortBy = UsersSortField.CreatedAt,
         SortOrder sortOrder = SortOrder.Desc,
         CancellationToken ct = default);
 
@@ -39,7 +39,7 @@ public interface IUserService
         int shopId,
         int pageNumber,
         int pageSize,
-        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        UsersSortField sortBy = UsersSortField.CreatedAt,
         SortOrder sortOrder = SortOrder.Desc,
         CancellationToken ct = default);
 

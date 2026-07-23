@@ -4,7 +4,10 @@ using SedaWears.Application.Common.Interfaces;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record LoginWithGoogleCommand(string? IdToken) : IRequest;
+public record LoginWithGoogleCommand(string? IdToken) : IRequest
+{
+    public string? IdToken { get; init; } = IdToken?.Trim();
+}
 
 public class LoginWithGoogleValidator : AbstractValidator<LoginWithGoogleCommand>
 {

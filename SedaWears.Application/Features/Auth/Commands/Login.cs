@@ -4,7 +4,10 @@ using SedaWears.Application.Common.Interfaces;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record LoginCommand(string? Email, string? Password, bool RememberMe) : IRequest;
+public record LoginCommand(string? Email, string? Password, bool RememberMe) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+}
 
 public class LoginValidator : AbstractValidator<LoginCommand>
 {
@@ -23,6 +26,6 @@ public class LoginHandler(IAuthService authService, IOriginContext originContext
 {
     public async Task Handle(LoginCommand request, CancellationToken ct)
     {
-        await authService.SignInAsync(request.Email!.Trim(), request.Password!, request.RememberMe, originContext.OriginRole, ct);
+        await authService.SignInAsync(request.Email!, request.Password!, request.RememberMe, originContext.OriginRole, ct);
     }
 }

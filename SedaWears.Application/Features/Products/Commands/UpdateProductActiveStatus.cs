@@ -10,7 +10,7 @@ namespace SedaWears.Application.Features.Products.Commands;
 
 using FluentValidation;
 
-public record UpdateProductActiveStatusCommand(int Id, bool? IsActive, int? ShopId = null) : IRequest;
+public record UpdateProductActiveStatusCommand(int ShopId, int CategoryId, int Id, bool? IsActive) : IRequest;
 
 public class UpdateProductActiveStatusValidator : AbstractValidator<UpdateProductActiveStatusCommand>
 {
@@ -29,7 +29,7 @@ public class UpdateProductActiveStatusHandler(IApplicationDbContext dbContext, I
             .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == request.Id, ct) ?? throw new ProductNotFoundException();
 
-        if (request.ShopId.HasValue && product.Category.ShopId != request.ShopId)
+        if (product.Category.ShopId != request.ShopId || product.CategoryId != request.CategoryId)
         {
             throw new ProductNotFoundException();
         }

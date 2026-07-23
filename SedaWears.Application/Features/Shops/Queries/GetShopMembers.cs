@@ -17,7 +17,7 @@ public record GetShopMembersQuery(
     UserRole? Role,
     int PageNumber,
     int PageSize,
-    ShopMemberSortBy SortBy,
+    ShopMemberSortField SortBy,
     SortOrder SortOrder) : IRequest<PaginatedList<UserDto>>, IPaginatedQuery;
 
 public class GetShopMembersValidator : PaginatedQueryValidator<GetShopMembersQuery> { }
@@ -34,10 +34,10 @@ public class GetShopMembersHandler(IApplicationDbContext dbContext, IOptions<Ope
 
             query = request.SortBy switch
             {
-                ShopMemberSortBy.Name => desc
+                ShopMemberSortField.Name => desc
                     ? query.OrderByDescending(so => so.User.FirstName).ThenByDescending(so => so.User.LastName)
                     : query.OrderBy(so => so.User.FirstName).ThenBy(so => so.User.LastName),
-                ShopMemberSortBy.Email => desc
+                ShopMemberSortField.Email => desc
                     ? query.OrderByDescending(so => so.User.Email)
                     : query.OrderBy(so => so.User.Email),
                 _ => desc
@@ -61,10 +61,10 @@ public class GetShopMembersHandler(IApplicationDbContext dbContext, IOptions<Ope
 
             query = request.SortBy switch
             {
-                ShopMemberSortBy.Name => desc
+                ShopMemberSortField.Name => desc
                     ? query.OrderByDescending(sm => sm.User.FirstName).ThenByDescending(sm => sm.User.LastName)
                     : query.OrderBy(sm => sm.User.FirstName).ThenBy(sm => sm.User.LastName),
-                ShopMemberSortBy.Email => desc
+                ShopMemberSortField.Email => desc
                     ? query.OrderByDescending(sm => sm.User.Email)
                     : query.OrderBy(sm => sm.User.Email),
                 _ => desc

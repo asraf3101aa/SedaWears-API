@@ -14,7 +14,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SedaWears.Application.Features.Users.Commands;
 
-public record UpdateUserCommand(int Id, string? FirstName, string? LastName) : IRequest;
+public record UpdateUserCommand(int Id, string? FirstName, string? LastName) : IRequest
+{
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+}
 
 public class UpdateUserValidator : AbstractValidator<UpdateUserCommand>
 {

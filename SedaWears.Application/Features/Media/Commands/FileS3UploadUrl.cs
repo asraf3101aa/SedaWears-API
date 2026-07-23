@@ -34,7 +34,7 @@ public class FileS3UploadUrlHandler(IS3Service s3Service) : IRequestHandler<File
         var responses = request.Files!.Select(file =>
         {
             var url = s3Service.GetPreSignedUrl(file.ContentType, file.FileName);
-            return new FileUploadUrl(file.FileName, url.ToString());
+            return new FileUploadUrl(file.FileName, url!);
         }).ToList();
 
         return Task.FromResult(responses);

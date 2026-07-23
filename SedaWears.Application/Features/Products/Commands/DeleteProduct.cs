@@ -7,7 +7,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Products.Commands;
 
-public record DeleteProductCommand(int Id, int? ShopId = null) : IRequest<Unit>;
+public record DeleteProductCommand(int ShopId, int CategoryId, int Id) : IRequest<Unit>;
 
 public class DeleteProductHandler(IApplicationDbContext dbContext, IFusionCache fusionCache) : IRequestHandler<DeleteProductCommand, Unit>
 {
@@ -17,7 +17,7 @@ public class DeleteProductHandler(IApplicationDbContext dbContext, IFusionCache 
             .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == request.Id, ct) ?? throw new ProductNotFoundException();
 
-        if (request.ShopId.HasValue && product.Category.ShopId != request.ShopId)
+        if (product.Category.ShopId != request.ShopId || product.CategoryId != request.CategoryId)
         {
             throw new ProductNotFoundException();
         }

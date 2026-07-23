@@ -20,7 +20,7 @@ public class AuthController(ISender mediator) : ControllerBase
     public async Task<IActionResult> Logout()
     {
         await mediator.Send(new LogoutCommand());
-        return Ok(new { message = "Logged out successfully." });
+        return NoContent();
     }
 
     [HttpPost("register")]
@@ -32,7 +32,7 @@ public class AuthController(ISender mediator) : ControllerBase
             request?.FirstName,
             request?.LastName,
             request?.Phone));
-        return Ok(new { Message = "Registration successful. Please login to continue." });
+        return StatusCode(StatusCodes.Status201Created);
     }
 
     [HttpPost("google-login")]
@@ -46,7 +46,7 @@ public class AuthController(ISender mediator) : ControllerBase
     public async Task<IActionResult> Forgot(ForgotPasswordRequest req)
     {
         await mediator.Send(new ForgotPasswordCommand(req.Email?.Trim()));
-        return Ok(new { Message = "A reset password link has been sent to your email if it exists in our system." });
+        return NoContent();
     }
 
     [HttpPost("reset-password")]

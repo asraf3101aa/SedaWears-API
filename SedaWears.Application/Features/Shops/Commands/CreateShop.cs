@@ -11,7 +11,14 @@ public record CreateShopCommand(
     string? SubdomainSlug,
     string? Description,
     string? LogoFileName = null,
-    string? BannerFileName = null) : IRequest;
+    string? BannerFileName = null) : IRequest<int>
+{
+    public string? Name { get; init; } = Name?.Trim();
+    public string? SubdomainSlug { get; init; } = SubdomainSlug?.Trim();
+    public string? Description { get; init; } = Description?.Trim();
+    public string? LogoFileName { get; init; } = LogoFileName?.Trim();
+    public string? BannerFileName { get; init; } = BannerFileName?.Trim();
+}
 
 public class CreateShopValidator : AbstractValidator<CreateShopCommand>
 {
@@ -32,9 +39,9 @@ public class CreateShopValidator : AbstractValidator<CreateShopCommand>
             .MustAsync(BeUniqueSubdomainSlug).WithMessage("Subdomain slug already exists.");
 
         RuleFor(x => x.Description)
+            .NotEmpty().WithMessage("Description is required.")
             .MinimumLength(10).WithMessage("Description must be at least 10 characters long.")
-            .MaximumLength(250).WithMessage("Description must not exceed 300 characters.")
-            .When(x => !string.IsNullOrEmpty(x.Description));
+            .MaximumLength(250).WithMessage("Description must not exceed 300 characters.");
 
         RuleFor(x => x.LogoFileName)
             .MaximumLength(255).WithMessage("Logo file name must not exceed 255 characters.");
@@ -54,20 +61,22 @@ public class CreateShopValidator : AbstractValidator<CreateShopCommand>
     }
 }
 
-public class CreateShopHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateShopCommand>
+public class CreateShopHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateShopCommand, int>
 {
-    public async Task Handle(CreateShopCommand request, CancellationToken ct)
+    public async Task<int> Handle(CreateShopCommand request, CancellationToken ct)
     {
         var shop = new Shop
         {
             Name = request.Name!,
             SubdomainSlug = request.SubdomainSlug!,
-            Description = request.Description,
+            Description = request.Description!,
             LogoFileName = request.LogoFileName,
             BannerFileName = request.BannerFileName
         };
 
         dbContext.Shops.Add(shop);
         await dbContext.SaveChangesAsync(ct);
+
+        return shop.Id;
     }
 }

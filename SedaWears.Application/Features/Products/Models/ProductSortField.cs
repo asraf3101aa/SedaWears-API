@@ -1,6 +1,6 @@
 namespace SedaWears.Application.Features.Products.Models;
 
-public enum ProductSortBy
+public enum ProductSortField
 {
     CreatedAt,
     Name,

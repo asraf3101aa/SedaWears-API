@@ -12,7 +12,10 @@ using System.Web;
 
 namespace SedaWears.Application.Features.Invitations.Commands;
 
-public record InviteAdminCommand(string? Email) : IRequest;
+public record InviteAdminCommand(string? Email) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+}
 public record ResendAdminInvitationCommand(int InvitationId) : IRequest;
 
 public class InviteAdminValidator : AbstractValidator<InviteAdminCommand>
@@ -92,7 +95,13 @@ public record AcceptAdminInvitationCommand(
     string? Token,
     string? FirstName,
     string? LastName,
-    string? Password) : IRequest;
+    string? Password) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+    public string? Token { get; init; } = Token?.Trim();
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+}
 
 public class AcceptAdminInvitationValidator : AbstractValidator<AcceptAdminInvitationCommand>
 {

@@ -12,7 +12,10 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Invitations.Commands;
 
-public record InviteOwnerCommand(int? ShopId, string? Email) : IRequest;
+public record InviteOwnerCommand(int? ShopId, string? Email) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+}
 
 public class InviteOwnerValidator : AbstractValidator<InviteOwnerCommand>
 {
@@ -76,7 +79,13 @@ public record AcceptShopOwnerInvitationCommand(
     string? Token,
     string? FirstName,
     string? LastName,
-    string? Password) : IRequest;
+    string? Password) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+    public string? Token { get; init; } = Token?.Trim();
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+}
 
 public class AcceptShopOwnerInvitationValidator : AbstractValidator<AcceptShopOwnerInvitationCommand>
 {

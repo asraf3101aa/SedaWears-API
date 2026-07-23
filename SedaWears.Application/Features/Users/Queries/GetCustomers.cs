@@ -10,7 +10,7 @@ namespace SedaWears.Application.Features.Users.Queries;
 public record GetCustomersQuery(
     int PageNumber,
     int PageSize,
-    UsersSortBy SortBy,
+    UsersSortField SortBy,
     SortOrder SortOrder)
     : IRequest<PaginatedList<UserDto>>, IPaginatedQuery;
 

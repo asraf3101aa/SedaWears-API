@@ -22,6 +22,6 @@ public class MediaController(ISender mediator) : ControllerBase
     public async Task<IActionResult> DeleteFile(string filename)
     {
         await mediator.Send(new DeleteFileCommand(filename));
-        return Ok(new { message = "File deleted successfully." });
+        return NoContent();
     }
 }

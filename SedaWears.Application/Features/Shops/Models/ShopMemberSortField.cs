@@ -1,9 +1,8 @@
 namespace SedaWears.Application.Features.Shops.Models;
 
-public enum ShopSortBy
+public enum ShopMemberSortField
 {
     CreatedAt,
     Name,
-    Slug,
-    IsActive
+    Email
 }

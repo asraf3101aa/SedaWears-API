@@ -6,7 +6,10 @@ using SedaWears.Domain.Entities;
 
 namespace SedaWears.Application.Features.Newsletter.Commands;
 
-public record SubscribeCommand(string Email) : IRequest;
+public record SubscribeCommand(string Email) : IRequest
+{
+    public string Email { get; init; } = Email.Trim();
+}
 
 public class SubscribeCommandHandler(IApplicationDbContext context) : IRequestHandler<SubscribeCommand>
 {

@@ -22,15 +22,8 @@ public class UserService(
     IFusionCache fusionCache,
     IServiceScopeFactory scopeFactory,
     ICurrentUser currentUser,
-    IOptions<OpeninaryConfig> configOptions,
-    IOptions<CacheConfig> cacheConfigOptions) : IUserService
+    IOptions<OpeninaryConfig> configOptions) : IUserService
 {
-    private readonly FusionCacheEntryOptions _userProfileCacheOptions = new()
-    {
-        Duration = cacheConfigOptions.Value.ProfileCacheDuration,
-        EagerRefreshThreshold = cacheConfigOptions.Value.ProfileCacheEagerRefreshThreshold
-    };
-
     public async Task<UserDto?> FindByIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         return await fusionCache.GetOrSetAsync(
@@ -45,7 +38,7 @@ public class UserService(
                     .ProjectToUser(configOptions.Value.BaseUrl, scopedDb)
                     .FirstOrDefaultAsync(ct);
             },
-            _userProfileCacheOptions,
+            CachePolicies.UserProfile,
             token: cancellationToken);
     }
 
@@ -122,7 +115,7 @@ public class UserService(
         UserRole role,
         int pageNumber,
         int pageSize,
-        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        UsersSortField sortBy = UsersSortField.CreatedAt,
         SortOrder sortOrder = SortOrder.Desc,
         CancellationToken ct = default)
     {
@@ -136,10 +129,10 @@ public class UserService(
         var desc = sortOrder == SortOrder.Desc;
         query = sortBy switch
         {
-            UsersSortBy.Name => desc
+            UsersSortField.Name => desc
                 ? query.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName)
                 : query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
-            UsersSortBy.Email => desc
+            UsersSortField.Email => desc
                 ? query.OrderByDescending(u => u.Email)
                 : query.OrderBy(u => u.Email),
             _ => desc
@@ -161,7 +154,7 @@ public class UserService(
         int shopId,
         int pageNumber,
         int pageSize,
-        UsersSortBy sortBy = UsersSortBy.CreatedAt,
+        UsersSortField sortBy = UsersSortField.CreatedAt,
         SortOrder sortOrder = SortOrder.Desc,
         CancellationToken ct = default)
     {
@@ -172,10 +165,10 @@ public class UserService(
         var desc = sortOrder == SortOrder.Desc;
         query = sortBy switch
         {
-            UsersSortBy.Name => desc
+            UsersSortField.Name => desc
                 ? query.OrderByDescending(sm => sm.User.FirstName).ThenByDescending(sm => sm.User.LastName)
                 : query.OrderBy(sm => sm.User.FirstName).ThenBy(sm => sm.User.LastName),
-            UsersSortBy.Email => desc
+            UsersSortField.Email => desc
                 ? query.OrderByDescending(sm => sm.User.Email)
                 : query.OrderBy(sm => sm.User.Email),
             _ => desc

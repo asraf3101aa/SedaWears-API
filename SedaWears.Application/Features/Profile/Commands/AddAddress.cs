@@ -18,7 +18,16 @@ public record AddAddressCommand(
     string? Street,
     string? City,
     string? ZipCode
-) : IRequest<AddressDto>;
+) : IRequest<AddressDto>
+{
+    public string? Label { get; init; } = Label?.Trim();
+    public string? FullName { get; init; } = FullName?.Trim();
+    public string? Email { get; init; } = Email?.Trim();
+    public string? Phone { get; init; } = Phone?.Trim();
+    public string? Street { get; init; } = Street?.Trim();
+    public string? City { get; init; } = City?.Trim();
+    public string? ZipCode { get; init; } = ZipCode?.Trim();
+}
 
 public class AddAddressCommandValidator : AbstractValidator<AddAddressCommand>
 {

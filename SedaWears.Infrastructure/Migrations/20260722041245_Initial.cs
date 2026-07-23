@@ -717,13 +717,6 @@ namespace SedaWears.Infrastructure.Migrations
                 column: "DisplayOrder");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Categories_Name",
-                table: "Categories",
-                column: "Name",
-                unique: true,
-                filter: "\"ShopId\" IS NULL");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Categories_ShopId",
                 table: "Categories",
                 column: "ShopId");
@@ -732,8 +725,7 @@ namespace SedaWears.Infrastructure.Migrations
                 name: "IX_Categories_ShopId_Name",
                 table: "Categories",
                 columns: new[] { "ShopId", "Name" },
-                unique: true,
-                filter: "\"ShopId\" IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Guests_Email",

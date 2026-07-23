@@ -9,7 +9,11 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record ResetPasswordCommand(string? Email, string? Token, string? NewPassword) : IRequest;
+public record ResetPasswordCommand(string? Email, string? Token, string? NewPassword) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+    public string? Token { get; init; } = Token?.Trim();
+}
 
 public class ResetPasswordValidator : AbstractValidator<ResetPasswordCommand>
 {

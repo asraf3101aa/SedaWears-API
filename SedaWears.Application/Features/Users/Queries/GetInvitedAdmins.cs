@@ -13,7 +13,7 @@ namespace SedaWears.Application.Features.Users.Queries;
 public record GetInvitedAdminsQuery(
     int PageNumber,
     int PageSize,
-    InvitedAdminsSortBy SortBy,
+    InvitedAdminsSortField SortBy,
     SortOrder SortOrder) : IRequest<PaginatedList<InvitedUserDto>>;
 
 public class GetInvitedAdminsHandler(
@@ -27,7 +27,7 @@ public class GetInvitedAdminsHandler(
         var desc = request.SortOrder == SortOrder.Desc;
         query = request.SortBy switch
         {
-            InvitedAdminsSortBy.Email => desc
+            InvitedAdminsSortField.Email => desc
                 ? query.OrderByDescending(ia => ia.Email)
                 : query.OrderBy(ia => ia.Email),
             _ => desc

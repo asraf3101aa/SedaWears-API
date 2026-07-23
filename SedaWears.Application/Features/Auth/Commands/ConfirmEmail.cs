@@ -6,7 +6,10 @@ using SedaWears.Domain.Entities;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record ConfirmEmailCommand(int UserId, string Token) : IRequest;
+public record ConfirmEmailCommand(int UserId, string Token) : IRequest
+{
+    public string Token { get; init; } = Token.Trim();
+}
 
 public class ConfirmEmailHandler(UserManager<User> userManager) : IRequestHandler<ConfirmEmailCommand>
 {

@@ -32,7 +32,6 @@ public static class DependencyInjection
             .AddConfigWithValidation<S3Config, S3ConfigValidator>("S3")
             .AddConfigWithValidation<OpeninaryConfig, OpeninaryConfigValidator>("Openinary")
             .AddConfigWithValidation<EmailConfig, EmailConfigValidator>("Email")
-            .AddConfigWithValidation<CacheConfig, CacheConfigValidator>("Cache")
             .AddConfigWithValidation<ResendConfig, ResendConfigValidator>("Resend");
 
         return services;

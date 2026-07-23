@@ -5,7 +5,10 @@ using SedaWears.Application.Common.Exceptions;
 
 namespace SedaWears.Application.Features.Newsletter.Commands;
 
-public record UnsubscribeCommand(string Email) : IRequest;
+public record UnsubscribeCommand(string Email) : IRequest
+{
+    public string Email { get; init; } = Email.Trim();
+}
 
 public class UnsubscribeCommandHandler(IApplicationDbContext context) : IRequestHandler<UnsubscribeCommand>
 {

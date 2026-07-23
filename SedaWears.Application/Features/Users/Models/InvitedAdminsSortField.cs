@@ -1,8 +1,7 @@
 namespace SedaWears.Application.Features.Users.Models;
 
-public enum UsersSortBy
+public enum InvitedAdminsSortField
 {
     CreatedAt,
-    Name,
     Email
 }

@@ -9,13 +9,17 @@ using SedaWears.Domain.Entities;
 namespace SedaWears.Application.Features.Products.Commands;
 
 public record CreateProductCommand(
+    int ShopId,
+    int CategoryId,
     string? Name,
     string? Description,
     decimal? Price,
     Gender? Gender,
-    int? CategoryId,
-    List<string>? ImageFileNames,
-    int? ShopId = null) : IRequest;
+    List<string>? ImageFileNames) : IRequest<int>
+{
+    public string? Name { get; init; } = Name?.Trim();
+    public string? Description { get; init; } = Description?.Trim();
+}
 
 public class CreateProductValidator : AbstractValidator<CreateProductCommand>
 {
@@ -34,10 +38,6 @@ public class CreateProductValidator : AbstractValidator<CreateProductCommand>
             .NotEmpty().WithMessage("Price is required.")
             .GreaterThan(0).WithMessage("Product price must be greater than zero.");
 
-        RuleFor(x => x.CategoryId)
-            .NotEmpty().WithMessage("Category is required.")
-            .GreaterThan(0).WithMessage("A valid category identifier is required.");
-
         RuleFor(x => x.Gender)
             .NotEmpty().WithMessage("Gender is required.")
             .IsInEnum().WithMessage("A valid gender must be specified.");
@@ -47,19 +47,16 @@ public class CreateProductValidator : AbstractValidator<CreateProductCommand>
     }
 }
 
-public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateProductCommand>
+public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateProductCommand, int>
 {
-    public async Task Handle(CreateProductCommand request, CancellationToken ct)
+    public async Task<int> Handle(CreateProductCommand request, CancellationToken ct)
     {
-        if (request.ShopId.HasValue)
-        {
-            var categoryExists = await dbContext.Categories
-                .AnyAsync(c => c.Id == request.CategoryId!.Value && c.ShopId == request.ShopId, ct);
+        var categoryExists = await dbContext.Categories
+            .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId, ct);
 
-            if (!categoryExists)
-            {
-                throw new CategoryNotFoundException();
-            }
+        if (!categoryExists)
+        {
+            throw new CategoryNotFoundException();
         }
 
         var product = new Product
@@ -67,7 +64,7 @@ public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHan
             Name = request.Name!,
             Description = request.Description,
             Price = request.Price!.Value,
-            CategoryId = request.CategoryId!.Value,
+            CategoryId = request.CategoryId,
             Gender = request.Gender!.Value,
             Images = request.ImageFileNames!.Select((fileName, index) => new ProductImage
             {
@@ -78,5 +75,7 @@ public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHan
 
         dbContext.Products.Add(product);
         await dbContext.SaveChangesAsync(ct);
+
+        return product.Id;
     }
 }

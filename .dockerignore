@@ -1,0 +1,40 @@
+# Git
+.git/
+.github/
+.gitignore
+
+# Build outputs
+**/bin/
+**/obj/
+**/[Dd]ebug/
+**/[Rr]elease/
+artifacts/
+publish/
+
+# IDE / editor
+.vscode/
+.vs/
+.idea/
+*.user
+*.suo
+
+# Coding assistant config
+.claude/
+.agents/
+.mcp.json
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Test results / logs
+**/[Tt]est[Rr]esult*/
+*.log
+coverage*.xml
+coverage*.json
+coverage*.info
+
+# Misc
+README.md
+*.md

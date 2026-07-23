@@ -8,7 +8,13 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Auth.Commands;
 
-public record RegisterCommand(string? Email, string? Password, string? FirstName, string? LastName, string? Phone) : IRequest;
+public record RegisterCommand(string? Email, string? Password, string? FirstName, string? LastName, string? Phone) : IRequest
+{
+    public string? Email { get; init; } = Email?.Trim();
+    public string? FirstName { get; init; } = FirstName?.Trim();
+    public string? LastName { get; init; } = LastName?.Trim();
+    public string? Phone { get; init; } = Phone?.Trim();
+}
 
 public class RegisterValidator : AbstractValidator<RegisterCommand>
 {
@@ -44,7 +50,7 @@ public class RegisterHandler(
 {
     public async Task Handle(RegisterCommand request, CancellationToken ct)
     {
-        var email = request.Email!.Trim();
+        var email = request.Email!;
         var existingUser = await userService.FindByEmailAsync(email);
 
         if (existingUser != null)
@@ -57,9 +63,9 @@ public class RegisterHandler(
         {
             Email = email,
             UserName = email,
-            FirstName = request.FirstName!.Trim(),
-            LastName = request.LastName!.Trim(),
-            PhoneNumber = request.Phone!.Trim()
+            FirstName = request.FirstName!,
+            LastName = request.LastName!,
+            PhoneNumber = request.Phone!
         };
 
         await userService.CreateUserAsync(user, request.Password!);

@@ -10,7 +10,11 @@ using FluentValidation;
 
 namespace SedaWears.Application.Features.Profile.Commands;
 
-public record GetOwnerAvatarUploadUrlCommand(string FileName, string ContentType) : IRequest<ImageUploadUrlResponse>;
+public record GetOwnerAvatarUploadUrlCommand(string FileName, string ContentType) : IRequest<ImageUploadUrlResponse>
+{
+    public string FileName { get; init; } = FileName.Trim();
+    public string ContentType { get; init; } = ContentType.Trim();
+}
 
 public class GetOwnerAvatarUploadUrlCommandValidator : AbstractValidator<GetOwnerAvatarUploadUrlCommand>
 {

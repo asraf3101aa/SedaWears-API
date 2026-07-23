@@ -11,19 +11,28 @@ using ZiggyCreatures.Caching.Fusion;
 namespace SedaWears.Application.Features.Products.Commands;
 
 public record UpdateProductCommand(
+    int ShopId,
+    int CategoryId,
     int Id,
     string? Name,
     string? Description,
     decimal? Price,
     Gender? Gender,
-    int? CategoryId,
-    List<string>? ImageFileNames,
-    int? ShopId = null) : IRequest;
+    List<string>? ImageFileNames) : IRequest
+{
+    public string? Name { get; init; } = Name?.Trim();
+    public string? Description { get; init; } = Description?.Trim();
+}
 
 public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
 {
     public UpdateProductValidator()
     {
+        RuleFor(x => x.ShopId)
+            .GreaterThan(0).WithMessage("A valid shop identifier is required.");
+
+        RuleFor(x => x.CategoryId)
+            .GreaterThan(0).WithMessage("A valid category identifier is required.");
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Product name is required.")
@@ -37,10 +46,6 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
         RuleFor(x => x.Price)
             .NotEmpty().WithMessage("Price is required.")
             .GreaterThan(0).WithMessage("Product price must be greater than zero.");
-
-        RuleFor(x => x.CategoryId)
-            .NotEmpty().WithMessage("Category is required.")
-            .GreaterThan(0).WithMessage("A valid category identifier is required.");
 
         RuleFor(x => x.Gender)
             .NotEmpty().WithMessage("Gender is required.")
@@ -58,26 +63,23 @@ public class UpdateProductHandler(IApplicationDbContext dbContext, IFusionCache 
             .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == request.Id, ct) ?? throw new ProductNotFoundException();
 
-        if (request.ShopId.HasValue)
+        if (product.Category.ShopId != request.ShopId)
         {
-            if (product.Category.ShopId != request.ShopId)
-            {
-                throw new ProductNotFoundException();
-            }
+            throw new ProductNotFoundException();
+        }
 
-            var categoryExists = await dbContext.Categories
-                .AnyAsync(c => c.Id == request.CategoryId!.Value && c.ShopId == request.ShopId, ct);
+        var categoryExists = await dbContext.Categories
+            .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId, ct);
 
-            if (!categoryExists)
-            {
-                throw new CategoryNotFoundException();
-            }
+        if (!categoryExists)
+        {
+            throw new CategoryNotFoundException();
         }
 
         product.Name = request.Name!;
         product.Description = request.Description;
         product.Price = request.Price!.Value;
-        product.CategoryId = request.CategoryId!.Value;
+        product.CategoryId = request.CategoryId;
         product.Gender = request.Gender!.Value;
 
         if (request.ImageFileNames is { Count: > 0 })
