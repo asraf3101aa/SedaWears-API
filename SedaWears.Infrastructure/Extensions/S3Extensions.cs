@@ -10,8 +10,9 @@ internal static class S3Extensions
     public static IServiceCollection AddS3(this IServiceCollection services)
     {
         services.AddOptions<AmazonS3Config>()
-            .Configure<S3Config>((options, config) =>
+            .Configure<IOptions<S3Config>>((options, configOptions) =>
             {
+                var config = configOptions.Value;
                 options.ForcePathStyle = !string.IsNullOrEmpty(config.Endpoint);
                 if (!string.IsNullOrEmpty(config.Endpoint))
                 {
