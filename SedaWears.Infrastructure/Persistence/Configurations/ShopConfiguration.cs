@@ -12,8 +12,9 @@ public class ShopConfiguration : IEntityTypeConfiguration<Shop>
         builder.Property(t => t.SubdomainSlug).HasMaxLength(100).IsRequired();
         builder.Property(t => t.Description).HasMaxLength(1000).IsRequired();
         
-        builder.HasIndex(t => t.Name).IsUnique();
-        builder.HasIndex(t => t.SubdomainSlug).IsUnique();
+        builder.HasIndex(t => t.Name).IsUnique().HasFilter("\"IsDeleted\" = false");
+        builder.HasIndex(t => t.SubdomainSlug).IsUnique().HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(t => t.IsActive);
+        builder.HasQueryFilter(t => !t.IsDeleted);
     }
 }

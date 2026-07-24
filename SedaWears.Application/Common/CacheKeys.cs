@@ -7,4 +7,8 @@ public static class CacheKeys
     public static string User(int userId) => $"user:{userId}";
 
     public static string Product(int productId) => $"product:{productId}";
+
+    public static string Shop(int shopId) => $"shop:{shopId}";
+
+    public static string Category(int categoryId) => $"category:{categoryId}";
 }

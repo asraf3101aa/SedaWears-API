@@ -12,7 +12,8 @@ public static class CategoryProjections
             c.Name,
             c.Description,
             c.DisplayOrder,
-            c.IsActive
+            c.IsActive,
+            c.IsDeleted
         ));
     }
 }

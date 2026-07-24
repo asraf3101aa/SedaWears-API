@@ -21,4 +21,16 @@ public static class CachePolicies
         Duration = TimeSpan.FromMinutes(10),
         EagerRefreshThreshold = 0.8f
     };
+
+    public static readonly FusionCacheEntryOptions Shop = new()
+    {
+        Duration = TimeSpan.FromMinutes(10),
+        EagerRefreshThreshold = 0.8f
+    };
+
+    public static readonly FusionCacheEntryOptions Category = new()
+    {
+        Duration = TimeSpan.FromMinutes(10),
+        EagerRefreshThreshold = 0.8f
+    };
 }

@@ -12,7 +12,7 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Products.Queries;
 
-public record GetProductsQuery(
+public record GetShopCategoryProductsQuery(
     int ShopId,
     int CategoryId,
     int PageNumber,
@@ -21,28 +21,18 @@ public record GetProductsQuery(
     SortOrder SortOrder,
     string? Search) : IRequest<PaginatedList<ProductDto>>, IPaginatedQuery;
 
-public class GetProductsValidator : PaginatedQueryValidator<GetProductsQuery> { }
+public class GetShopCategoryProductsValidator : PaginatedQueryValidator<GetShopCategoryProductsQuery> { }
 
-public class GetProductsHandler(
+public class GetShopCategoryProductsHandler(
     IApplicationDbContext dbContext,
     IUserService userService,
     ICurrentUser currentUser,
     IOriginContext originContext,
-    IOptions<OpeninaryConfig> configOptions) : IRequestHandler<GetProductsQuery, PaginatedList<ProductDto>>
+    IOptions<OpeninaryConfig> configOptions) : IRequestHandler<GetShopCategoryProductsQuery, PaginatedList<ProductDto>>
 {
-    public async Task<PaginatedList<ProductDto>> Handle(GetProductsQuery request, CancellationToken ct)
+    public async Task<PaginatedList<ProductDto>> Handle(GetShopCategoryProductsQuery request, CancellationToken ct)
     {
-        var shopExists = await dbContext.Shops.AnyAsync(s => s.Id == request.ShopId, ct);
-        if (!shopExists)
-            throw new ShopNotFoundException();
-
-        if (request.ShopId == 1 && originContext.OriginRole is UserRole.Owner or UserRole.Manager)
-            throw new ShopNotFoundException();
-
-        var categoryExists = await dbContext.Categories
-            .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId, ct);
-        if (!categoryExists)
-            throw new CategoryNotFoundException();
+        var shopQuery = dbContext.Shops.AsNoTracking().Where(s => s.Id == request.ShopId);
 
         var query = dbContext.Products
             .AsNoTracking()
@@ -50,7 +40,16 @@ public class GetProductsHandler(
 
         if (originContext.OriginRole == UserRole.Customer)
         {
-            query = query.Where(p => p.IsActive && p.Category.IsActive && p.Category.Shop.IsActive);
+            var shopExists = await shopQuery.AnyAsync(s => s.IsActive && !s.IsDeleted, ct);
+            if (!shopExists)
+                throw new ShopNotFoundException();
+
+            var categoryExists = await dbContext.Categories
+                .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId && c.IsActive && !c.IsDeleted, ct);
+            if (!categoryExists)
+                throw new CategoryNotFoundException();
+
+            query = query.Where(p => p.IsActive && !p.IsDeleted);
         }
         else
         {
@@ -60,13 +59,27 @@ public class GetProductsHandler(
                 throw new ForbiddenException("You are not authorized to view these products.");
 
             var userId = currentUser.Id;
-            query = originContext.OriginRole switch
+            bool shopExists = originContext.OriginRole switch
             {
-                UserRole.Admin => query,
-                UserRole.Owner => query.Where(p => p.Category.Shop.Owners.Any(o => o.UserId == userId)),
-                UserRole.Manager => query.Where(p => p.Category.Shop.Managers.Any(m => m.UserId == userId)),
-                _ => throw new ForbiddenException("You are not authorized to view these products.")
+                UserRole.Admin => await shopQuery.AnyAsync(s => !s.IsDeleted, ct),
+                UserRole.Owner => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Owners.Any(o => o.UserId == userId), ct),
+                UserRole.Manager => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Managers.Any(m => m.UserId == userId), ct),
+                _ => false
             };
+
+            if (!shopExists)
+                throw new ShopNotFoundException();
+
+            bool categoryExists = await dbContext.Categories
+                .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId && !c.IsDeleted, ct);
+
+            if (!categoryExists)
+                throw new CategoryNotFoundException();
+
+            if (originContext.OriginRole != UserRole.Admin)
+            {
+                query = query.Where(p => !p.IsDeleted);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(request.Search))

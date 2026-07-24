@@ -13,10 +13,11 @@ public static class ProductProjections
             p.Description,
             p.Price,
             p.Gender,
-            p.Images.OrderBy(i => i.Order).Select(i => string.IsNullOrEmpty(i.FileName) ? "" : baseMediaUrl + "/t/" + i.FileName).ToList(),
+            p.Images.OrderBy(i => i.Order).Select(i => new ProductImageDto(i.FileName, new Uri(baseMediaUrl + "/" + i.FileName))).ToList(),
             p.SizeStocks.Select(s => new ProductSizeDto(s.Size, s.Stock)).ToList(),
             new CategorySummary(p.Category.Id, p.Category.Name),
-            p.CreatedAt
+            p.CreatedAt,
+            p.IsDeleted
         ));
     }
 }

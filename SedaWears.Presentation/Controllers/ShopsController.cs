@@ -44,7 +44,7 @@ public class ShopsController(ISender mediator) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = nameof(UserRole.Admin))]
+    [Authorize(Roles = $"{nameof(UserRole.Admin)}, {nameof(UserRole.Owner)}, {nameof(UserRole.Manager)}")]
     public async Task<IActionResult> UpdateShop(int id, UpsertShopRequest? request, CancellationToken ct)
     {
         await mediator.Send(new UpdateShopCommand(id, request?.Name, request?.SubdomainSlug, request?.Description, request?.LogoFileName, request?.BannerFileName), ct);
@@ -175,57 +175,57 @@ public class ShopsController(ISender mediator) : ControllerBase
 
     #region Categories
 
-    [HttpGet("{id:int}/categories")]
-    public async Task<IActionResult> GetCategories(
-        int id,
+    [HttpGet("{shopId:int}/categories")]
+    public async Task<IActionResult> GetShopCategories(
+        int shopId,
         [FromQuery] CategorySortField sortBy = CategorySortField.DisplayOrder,
         [FromQuery] SortOrder sortOrder = SortOrder.Asc,
         [FromQuery] string? search = null,
         CancellationToken ct = default)
-        => Ok(await mediator.Send(new GetCategoriesQuery(id, sortBy, sortOrder, search), ct));
+        => Ok(await mediator.Send(new GetShopCategoriesQuery(shopId, sortBy, sortOrder, search), ct));
 
-    [HttpGet("{id:int}/categories/{categoryId:int}")]
-    public async Task<IActionResult> GetCategory(int id, int categoryId, CancellationToken ct)
-        => Ok(await mediator.Send(new GetCategoryQuery(categoryId, id), ct));
+    [HttpGet("{shopId:int}/categories/{id:int}")]
+    public async Task<IActionResult> GetShopCategory(int shopId, int id, CancellationToken ct)
+        => Ok(await mediator.Send(new GetShopCategoryQuery(id, shopId), ct));
 
-    [HttpPost("{id:int}/categories")]
+    [HttpPost("{shopId:int}/categories")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> CreateCategory(int id, [FromBody] ShopUpsertCategoryRequest? request, CancellationToken ct)
+    public async Task<IActionResult> CreateShopCategory(int shopId, [FromBody] ShopCategoryUpsertRequest? request, CancellationToken ct)
     {
-        var categoryId = await mediator.Send(new CreateCategoryCommand(request?.Name, request?.Description, id), ct);
-        return CreatedAtAction(nameof(GetCategory), new { id, categoryId }, null);
+        var categoryId = await mediator.Send(new CreateShopCategoryCommand(request?.Name, request?.Description, shopId), ct);
+        return CreatedAtAction(nameof(GetShopCategory), new { shopId, id = categoryId }, null);
     }
 
-    [HttpPut("{id:int}/categories/{categoryId:int}")]
+    [HttpPut("{shopId:int}/categories/{id:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateCategory(int id, int categoryId, [FromBody] ShopUpsertCategoryRequest? request, CancellationToken ct)
+    public async Task<IActionResult> UpdateShopCategory(int shopId, int id, [FromBody] ShopCategoryUpsertRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new UpdateCategoryCommand(categoryId, request?.Name, request?.Description, id), ct);
+        await mediator.Send(new UpdateShopCategoryCommand(id, request?.Name, request?.Description, shopId), ct);
         return NoContent();
     }
 
-    [HttpDelete("{id:int}/categories/{categoryId:int}")]
+    [HttpDelete("{shopId:int}/categories/{id:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> DeleteCategory(int id, int categoryId, CancellationToken ct)
+    public async Task<IActionResult> DeleteShopCategory(int shopId, int id, CancellationToken ct)
     {
-        await mediator.Send(new DeleteCategoryCommand(categoryId, id), ct);
+        await mediator.Send(new DeleteShopCategoryCommand(id, shopId), ct);
         return NoContent();
     }
 
     [HttpPatch("{id:int}/categories/{categoryId:int}/status")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateCategoryStatus(int id, int categoryId, [FromBody] UpdateCategoryActiveStatusRequest? request, CancellationToken ct)
+    public async Task<IActionResult> UpdateShopCategoryStatus(int id, int categoryId, [FromBody] UpdateShopCategoryActiveStatusRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new UpdateCategoryActiveStatusCommand(categoryId, request?.IsActive, id), ct);
+        await mediator.Send(new UpdateShopCategoryActiveStatusCommand(categoryId, request?.IsActive, id), ct);
         return NoContent();
     }
 
     [HttpPost("{id:int}/categories/reorder")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> ReorderCategories(int id, [FromBody] ReorderCategoriesRequest? request, CancellationToken ct)
+    public async Task<IActionResult> ReorderShopCategories(int id, [FromBody] ReorderShopCategoriesRequest? request, CancellationToken ct)
     {
         var commandOrders = request?.Orders?.Select(o => new ReorderCategoryItem(o.Id!.Value, o.DisplayOrder!.Value)).ToList();
-        await mediator.Send(new ReorderCategoriesCommand(commandOrders, id), ct);
+        await mediator.Send(new ReorderShopCategoriesCommand(commandOrders, id), ct);
         return NoContent();
     }
 
@@ -233,9 +233,20 @@ public class ShopsController(ISender mediator) : ControllerBase
 
     #region Products
 
-    [HttpGet("{id:int}/categories/{categoryId:int}/products")]
-    public async Task<IActionResult> GetProducts(
+    [HttpGet("{id:int}/products")]
+    public async Task<IActionResult> GetShopProducts(
         int id,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] ProductSortField sortBy = ProductSortField.CreatedAt,
+        [FromQuery] SortOrder sortOrder = SortOrder.Asc,
+        [FromQuery] string? search = null,
+        CancellationToken ct = default)
+        => Ok(await mediator.Send(new GetShopProductsQuery(id, pageNumber, pageSize, sortBy, sortOrder, search), ct));
+
+    [HttpGet("{shopId:int}/categories/{categoryId:int}/products")]
+    public async Task<IActionResult> GetShopCategoryProducts(
+        int shopId,
         int categoryId,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
@@ -243,18 +254,18 @@ public class ShopsController(ISender mediator) : ControllerBase
         [FromQuery] SortOrder sortOrder = SortOrder.Asc,
         [FromQuery] string? search = null,
         CancellationToken ct = default)
-        => Ok(await mediator.Send(new GetProductsQuery(id, categoryId, pageNumber, pageSize, sortBy, sortOrder, search), ct));
+        => Ok(await mediator.Send(new GetShopCategoryProductsQuery(shopId, categoryId, pageNumber, pageSize, sortBy, sortOrder, search), ct));
 
-    [HttpGet("{id:int}/categories/{categoryId:int}/products/{productId:int}")]
-    public async Task<IActionResult> GetProduct(int id, int categoryId, int productId, CancellationToken ct)
-        => Ok(await mediator.Send(new GetProductQuery(productId, id, categoryId), ct));
+    [HttpGet("{shopId:int}/categories/{categoryId:int}/products/{id:int}")]
+    public async Task<IActionResult> GetShopCategoryProduct(int shopId, int categoryId, int id, CancellationToken ct)
+        => Ok(await mediator.Send(new GetShopCategoryProductQuery(id, shopId, categoryId), ct));
 
-    [HttpPost("{id:int}/categories/{categoryId:int}/products")]
+    [HttpPost("{shopId:int}/categories/{categoryId:int}/products")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> CreateProduct(int id, int categoryId, UpsertProductRequest? request, CancellationToken ct)
+    public async Task<IActionResult> CreateShopCategoryProduct(int shopId, int categoryId, ShopCategoryProductUpsertRequest? request, CancellationToken ct)
     {
-        var command = new CreateProductCommand(
-            id,
+        var command = new CreateShopCategoryProductCommand(
+            shopId,
             categoryId,
             request?.Name,
             request?.Description,
@@ -264,17 +275,17 @@ public class ShopsController(ISender mediator) : ControllerBase
         );
 
         var productId = await mediator.Send(command, ct);
-        return CreatedAtAction(nameof(GetProduct), new { id, categoryId, productId }, null);
+        return CreatedAtAction(nameof(GetShopCategoryProduct), new { id = shopId, categoryId, productId }, null);
     }
 
-    [HttpPut("{id:int}/categories/{categoryId:int}/products/{productId:int}")]
+    [HttpPut("{shopId:int}/categories/{categoryId:int}/products/{id:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateProduct(int id, int categoryId, int productId, UpsertProductRequest? request, CancellationToken ct)
+    public async Task<IActionResult> UpdateShopCategoryProduct(int shopId, int categoryId, int id, ShopCategoryProductUpsertRequest? request, CancellationToken ct)
     {
-        var command = new UpdateProductCommand(
-            id,
+        var command = new UpdateShopCategoryProductCommand(
+            shopId,
             categoryId,
-            productId,
+            id,
             request?.Name,
             request?.Description,
             request?.Price,
@@ -286,14 +297,14 @@ public class ShopsController(ISender mediator) : ControllerBase
         return NoContent();
     }
 
-    [HttpPatch("{id:int}/categories/{categoryId:int}/products/{productId:int}/sizes")]
+    [HttpPatch("{shopId:int}/categories/{categoryId:int}/products/{id:int}/sizes")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateProductSizes(int id, int categoryId, int productId, UpdateProductSizesRequest? request, CancellationToken ct)
+    public async Task<IActionResult> UpdateShopCategoryProductSizes(int shopId, int categoryId, int id, UpdateShopCategoryProductSizesRequest? request, CancellationToken ct)
     {
-        var command = new UpdateProductSizesCommand(
-            id,
+        var command = new UpdateShopCategoryProductSizesCommand(
+            shopId,
             categoryId,
-            productId,
+            id,
             request?.Sizes?.Select(s => new ProductSizeDto(s.Size ?? 0, s.Stock ?? 0)).ToList()
         );
 
@@ -301,19 +312,19 @@ public class ShopsController(ISender mediator) : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}/categories/{categoryId:int}/products/{productId:int}")]
+    [HttpDelete("{shopId:int}/categories/{categoryId:int}/products/{id:int}")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> DeleteProduct(int id, int categoryId, int productId, CancellationToken ct)
+    public async Task<IActionResult> DeleteShopCategoryProduct(int shopId, int categoryId, int id, CancellationToken ct)
     {
-        await mediator.Send(new DeleteProductCommand(id, categoryId, productId), ct);
+        await mediator.Send(new DeleteShopCategoryProductCommand(shopId, categoryId, id), ct);
         return NoContent();
     }
 
-    [HttpPatch("{id:int}/categories/{categoryId:int}/products/{productId:int}/status")]
+    [HttpPatch("{shopId:int}/categories/{categoryId:int}/products/{id:int}/status")]
     [Authorize(Roles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Owner)},{nameof(UserRole.Manager)}")]
-    public async Task<IActionResult> UpdateProductStatus(int id, int categoryId, int productId, UpdateProductActiveStatusRequest? request, CancellationToken ct)
+    public async Task<IActionResult> UpdateShopCategoryProductStatus(int shopId, int categoryId, int id, UpdateShopCategoryProductActiveStatusRequest? request, CancellationToken ct)
     {
-        await mediator.Send(new UpdateProductActiveStatusCommand(id, categoryId, productId, request?.IsActive), ct);
+        await mediator.Send(new UpdateShopCategoryProductActiveStatusCommand(shopId, categoryId, id, request?.IsActive), ct);
         return NoContent();
     }
 

@@ -3,6 +3,8 @@ using FluentValidation;
 using SedaWears.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SedaWears.Domain.Entities;
+using SedaWears.Domain.Enums;
+using SedaWears.Application.Common.Exceptions;
 
 namespace SedaWears.Application.Features.Shops.Commands;
 
@@ -52,19 +54,22 @@ public class CreateShopValidator : AbstractValidator<CreateShopCommand>
 
     private async Task<bool> BeUniqueName(string name, CancellationToken ct)
     {
-        return !await _dbContext.Shops.AnyAsync(x => EF.Functions.ILike(x.Name, name), ct);
+        return !await _dbContext.Shops.AnyAsync(x => !x.IsDeleted && EF.Functions.ILike(x.Name, name), ct);
     }
 
     private async Task<bool> BeUniqueSubdomainSlug(string slug, CancellationToken ct)
     {
-        return !await _dbContext.Shops.AnyAsync(x => EF.Functions.ILike(x.SubdomainSlug, slug), ct);
+        return !await _dbContext.Shops.AnyAsync(x => !x.IsDeleted && EF.Functions.ILike(x.SubdomainSlug, slug), ct);
     }
 }
 
-public class CreateShopHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateShopCommand, int>
+public class CreateShopHandler(IApplicationDbContext dbContext, ICurrentUser currentUser, IUserService userService) : IRequestHandler<CreateShopCommand, int>
 {
     public async Task<int> Handle(CreateShopCommand request, CancellationToken ct)
     {
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
+        if (!user.Roles.Contains(UserRole.Admin))
+            throw new ForbiddenException("You are not authorized to create a shop.");
         var shop = new Shop
         {
             Name = request.Name!,

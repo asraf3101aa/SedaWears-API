@@ -3,6 +3,7 @@ using FluentValidation;
 using SedaWears.Application.Common.Interfaces;
 using SedaWears.Application.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Shops.Commands;
 
@@ -53,20 +54,25 @@ public class UpdateShopValidator : AbstractValidator<UpdateShopCommand>
 
     private async Task<bool> BeUniqueName(UpdateShopCommand command, string name, CancellationToken ct)
     {
-        return !await _dbContext.Shops.AnyAsync(x => x.Id != command.Id && EF.Functions.ILike(x.Name, name), ct);
+        return !await _dbContext.Shops.AnyAsync(x => !x.IsDeleted && x.Id != command.Id && EF.Functions.ILike(x.Name, name), ct);
     }
 
     private async Task<bool> BeUniqueSubdomainSlug(UpdateShopCommand command, string slug, CancellationToken ct)
     {
-        return !await _dbContext.Shops.AnyAsync(x => x.Id != command.Id && EF.Functions.ILike(x.SubdomainSlug, slug), ct);
+        return !await _dbContext.Shops.AnyAsync(x => !x.IsDeleted && x.Id != command.Id && EF.Functions.ILike(x.SubdomainSlug, slug), ct);
     }
 }
 
-public class UpdateShopHandler(IApplicationDbContext dbContext) : IRequestHandler<UpdateShopCommand>
+public class UpdateShopHandler(IApplicationDbContext dbContext, ICurrentUser currentUser, IUserService userService) : IRequestHandler<UpdateShopCommand>
 {
     public async Task Handle(UpdateShopCommand request, CancellationToken ct)
     {
-        var shop = await dbContext.Shops.FirstOrDefaultAsync(s => s.Id == request.Id, ct)
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
+        
+        if (!user.Roles.Any(r => r == UserRole.Admin || r == UserRole.Owner || r == UserRole.Manager))
+            throw new ForbiddenException("You are not authorized to update this shop.");
+
+        var shop = await dbContext.Shops.FirstOrDefaultAsync(s => s.Id == request.Id && !s.IsDeleted, ct)
             ?? throw new ShopNotFoundException();
 
         shop.Name = request.Name!;

@@ -8,7 +8,7 @@ using SedaWears.Domain.Entities;
 
 namespace SedaWears.Application.Features.Products.Commands;
 
-public record CreateProductCommand(
+public record CreateShopCategoryProductCommand(
     int ShopId,
     int CategoryId,
     string? Name,
@@ -21,9 +21,9 @@ public record CreateProductCommand(
     public string? Description { get; init; } = Description?.Trim();
 }
 
-public class CreateProductValidator : AbstractValidator<CreateProductCommand>
+public class CreateShopCategoryProductValidator : AbstractValidator<CreateShopCategoryProductCommand>
 {
-    public CreateProductValidator()
+    public CreateShopCategoryProductValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Product name is required.")
@@ -47,12 +47,35 @@ public class CreateProductValidator : AbstractValidator<CreateProductCommand>
     }
 }
 
-public class CreateProductHandler(IApplicationDbContext dbContext) : IRequestHandler<CreateProductCommand, int>
+public class CreateShopCategoryProductHandler(
+    IApplicationDbContext dbContext,
+    IUserService userService,
+    ICurrentUser currentUser,
+    IOriginContext originContext) : IRequestHandler<CreateShopCategoryProductCommand, int>
 {
-    public async Task<int> Handle(CreateProductCommand request, CancellationToken ct)
+    public async Task<int> Handle(CreateShopCategoryProductCommand request, CancellationToken ct)
     {
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
+        
+        if (!user.Roles.Contains(originContext.OriginRole))
+            throw new ForbiddenException("You are not authorized to create products.");
+
+        var shopQuery = dbContext.Shops.AsNoTracking().Where(s => s.Id == request.ShopId);
+        var userId = currentUser.Id;
+
+        bool shopExists = originContext.OriginRole switch
+        {
+            UserRole.Admin => await shopQuery.AnyAsync(s => !s.IsDeleted, ct),
+            UserRole.Owner => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Owners.Any(o => o.UserId == userId), ct),
+            UserRole.Manager => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Managers.Any(m => m.UserId == userId), ct),
+            _ => false
+        };
+
+        if (!shopExists)
+            throw new ShopNotFoundException();
+
         var categoryExists = await dbContext.Categories
-            .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId, ct);
+            .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId && !c.IsDeleted, ct);
 
         if (!categoryExists)
         {

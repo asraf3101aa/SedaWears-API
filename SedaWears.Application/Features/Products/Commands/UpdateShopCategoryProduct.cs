@@ -10,7 +10,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace SedaWears.Application.Features.Products.Commands;
 
-public record UpdateProductCommand(
+public record UpdateShopCategoryProductCommand(
     int ShopId,
     int CategoryId,
     int Id,
@@ -24,9 +24,9 @@ public record UpdateProductCommand(
     public string? Description { get; init; } = Description?.Trim();
 }
 
-public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
+public class UpdateShopCategoryProductValidator : AbstractValidator<UpdateShopCategoryProductCommand>
 {
-    public UpdateProductValidator()
+    public UpdateShopCategoryProductValidator()
     {
         RuleFor(x => x.ShopId)
             .GreaterThan(0).WithMessage("A valid shop identifier is required.");
@@ -54,27 +54,47 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
     }
 }
 
-public class UpdateProductHandler(IApplicationDbContext dbContext, IFusionCache fusionCache) : IRequestHandler<UpdateProductCommand>
+public class UpdateShopCategoryProductHandler(
+    IApplicationDbContext dbContext,
+    IFusionCache fusionCache,
+    IUserService userService,
+    ICurrentUser currentUser,
+    IOriginContext originContext) : IRequestHandler<UpdateShopCategoryProductCommand>
 {
-    public async Task Handle(UpdateProductCommand request, CancellationToken ct)
+    public async Task Handle(UpdateShopCategoryProductCommand request, CancellationToken ct)
     {
-        var product = await dbContext.Products
-            .Include(p => p.Images)
-            .Include(p => p.Category)
-            .FirstOrDefaultAsync(p => p.Id == request.Id, ct) ?? throw new ProductNotFoundException();
+        var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
+        
+        if (!user.Roles.Contains(originContext.OriginRole))
+            throw new ForbiddenException("You are not authorized to update products.");
 
-        if (product.Category.ShopId != request.ShopId)
+        var shopQuery = dbContext.Shops.AsNoTracking().Where(s => s.Id == request.ShopId);
+        var userId = currentUser.Id;
+
+        bool shopExists = originContext.OriginRole switch
         {
-            throw new ProductNotFoundException();
-        }
+            UserRole.Admin => await shopQuery.AnyAsync(s => !s.IsDeleted, ct),
+            UserRole.Owner => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Owners.Any(o => o.UserId == userId), ct),
+            UserRole.Manager => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Managers.Any(m => m.UserId == userId), ct),
+            _ => false
+        };
+
+        if (!shopExists)
+            throw new ShopNotFoundException();
 
         var categoryExists = await dbContext.Categories
-            .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId, ct);
-
+            .AnyAsync(c => c.Id == request.CategoryId && c.ShopId == request.ShopId && !c.IsDeleted, ct);
         if (!categoryExists)
         {
             throw new CategoryNotFoundException();
         }
+
+        var productQuery = dbContext.Products
+            .Include(p => p.Images)
+            .Include(p => p.Category)
+            .Where(p => p.Id == request.Id && p.CategoryId == request.CategoryId && p.Category.ShopId == request.ShopId && !p.IsDeleted);
+
+        var product = await productQuery.FirstOrDefaultAsync(ct) ?? throw new ProductNotFoundException();
 
         product.Name = request.Name!;
         product.Description = request.Description;

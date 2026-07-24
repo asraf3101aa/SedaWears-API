@@ -18,7 +18,8 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsRequired();
 
         builder.HasIndex(t => new { t.ShopId, t.Name })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
 
         builder.HasIndex(t => t.DisplayOrder);
         builder.HasIndex(t => t.ShopId);
@@ -27,5 +28,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .WithMany()
             .HasForeignKey(t => t.ShopId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasQueryFilter(t => !t.IsDeleted);
     }
 }

@@ -30,11 +30,11 @@ public class GetShopsHandler(
 {
     public async Task<PaginatedList<ShopDto>> Handle(GetShopsQuery request, CancellationToken ct)
     {
-        var query = dbContext.Shops.AsQueryable();
+        var query = dbContext.Shops.AsNoTracking();
 
         if (originContext.OriginRole == UserRole.Customer)
         {
-            query = query.Where(s => s.IsActive);
+            query = query.Where(s => s.IsActive && !s.IsDeleted);
         }
         else
         {
@@ -47,8 +47,8 @@ public class GetShopsHandler(
             query = originContext.OriginRole switch
             {
                 UserRole.Admin => query.Where(s => s.Id != 1),
-                UserRole.Owner => query.Where(s => s.Id != 1 && s.Owners.Any(o => o.UserId == userId)),
-                UserRole.Manager => query.Where(s => s.Id != 1 && s.Managers.Any(m => m.UserId == userId)),
+                UserRole.Owner => query.Where(s => s.Id != 1 && !s.IsDeleted && s.Owners.Any(o => o.UserId == userId)),
+                UserRole.Manager => query.Where(s => s.Id != 1 && !s.IsDeleted && s.Managers.Any(m => m.UserId == userId)),
                 _ => throw new ForbiddenException("You are not authorized to view shops.")
             };
         }
@@ -72,7 +72,6 @@ public class GetShopsHandler(
 
         var totalCount = await query.CountAsync(ct);
         var items = await query
-            .AsNoTracking()
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ProjectToShop(configOptions.Value.BaseUrl)

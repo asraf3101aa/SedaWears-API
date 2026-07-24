@@ -8,26 +8,21 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Categories.Queries;
 
-public record GetCategoriesQuery(
+public record GetShopCategoriesQuery(
     int ShopId,
     CategorySortField SortBy,
     SortOrder SortOrder,
     string? Search) : IRequest<List<CategoryDto>>;
 
-public class GetCategoriesHandler(
+public class GetShopCategoriesHandler(
     IApplicationDbContext dbContext,
     IUserService userService,
     ICurrentUser currentUser,
-    IOriginContext originContext) : IRequestHandler<GetCategoriesQuery, List<CategoryDto>>
+    IOriginContext originContext) : IRequestHandler<GetShopCategoriesQuery, List<CategoryDto>>
 {
-    public async Task<List<CategoryDto>> Handle(GetCategoriesQuery request, CancellationToken ct)
+    public async Task<List<CategoryDto>> Handle(GetShopCategoriesQuery request, CancellationToken ct)
     {
-        var shopExists = await dbContext.Shops.AsNoTracking().AnyAsync(s => s.Id == request.ShopId, ct);
-        if (!shopExists)
-            throw new ShopNotFoundException();
-
-        if (request.ShopId == 1 && originContext.OriginRole is UserRole.Owner or UserRole.Manager)
-            throw new ShopNotFoundException();
+        var shopQuery = dbContext.Shops.AsNoTracking().Where(s => s.Id == request.ShopId);
 
         var query = dbContext.Categories
             .AsNoTracking()
@@ -35,8 +30,13 @@ public class GetCategoriesHandler(
 
         if (originContext.OriginRole == UserRole.Customer)
         {
-            query = query.Where(c => c.Shop.IsActive).OrderBy(c => c.DisplayOrder);
+            var shopExists = await shopQuery.AnyAsync(s => s.IsActive && !s.IsDeleted, ct);
+            if (!shopExists)
+                throw new ShopNotFoundException();
+
+            query = query.Where(c => c.IsActive && !c.IsDeleted).OrderBy(c => c.DisplayOrder);
         }
+
         else
         {
             var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
@@ -45,13 +45,21 @@ public class GetCategoriesHandler(
                 throw new ForbiddenException("You are not authorized to view these categories.");
 
             var userId = currentUser.Id;
-            query = originContext.OriginRole switch
+            bool shopExists = originContext.OriginRole switch
             {
-                UserRole.Admin => query,
-                UserRole.Owner => query.Where(c => c.Shop.Owners.Any(o => o.UserId == userId)),
-                UserRole.Manager => query.Where(c => c.Shop.Managers.Any(m => m.UserId == userId)),
-                _ => throw new ForbiddenException("You are not authorized to view these categories.")
+                UserRole.Admin => await shopQuery.AnyAsync(s => !s.IsDeleted, ct),
+                UserRole.Owner => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Owners.Any(o => o.UserId == userId), ct),
+                UserRole.Manager => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Managers.Any(m => m.UserId == userId), ct),
+                _ => false
             };
+
+            if (!shopExists)
+                throw new ShopNotFoundException();
+
+            if (originContext.OriginRole != UserRole.Admin)
+            {
+                query = query.Where(c => !c.IsDeleted);
+            }
 
             if (!string.IsNullOrWhiteSpace(request.Search))
             {

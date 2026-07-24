@@ -12,10 +12,13 @@ public static class ShopProjections
             s.Name,
             s.SubdomainSlug,
             s.Description,
+            s.LogoFileName,
             string.IsNullOrEmpty(s.LogoFileName) ? null : new Uri(baseMediaUrl + "/" + s.LogoFileName),
+            s.BannerFileName,
             string.IsNullOrEmpty(s.BannerFileName) ? null : new Uri(baseMediaUrl + "/" + s.BannerFileName),
             s.IsActive,
-            s.CreatedAt
+            s.CreatedAt,
+            s.IsDeleted
         ));
     }
 }

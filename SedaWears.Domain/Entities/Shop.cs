@@ -15,6 +15,7 @@ public class Shop : BaseEntity
     public string? LogoFileName { get; set; }
 
     public bool IsActive { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<ShopOwner> Owners { get; set; } = [];
@@ -82,6 +83,7 @@ public class Category : BaseEntity
     public int ShopId { get; set; }
     public Shop Shop { get; set; } = null!;
     public bool IsActive { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
 
     public ICollection<Product> Products { get; set; } = [];
 }
@@ -99,6 +101,7 @@ public class Product : BaseEntity
 
     public Gender Gender { get; set; }
     public bool IsActive { get; set; } = false;
+    public bool IsDeleted { get; set; } = false;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

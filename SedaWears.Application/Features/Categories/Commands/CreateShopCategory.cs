@@ -9,15 +9,15 @@ using SedaWears.Domain.Enums;
 
 namespace SedaWears.Application.Features.Categories.Commands;
 
-public record CreateCategoryCommand(string? Name, string? Description, int ShopId) : IRequest<int>
+public record CreateShopCategoryCommand(string? Name, string? Description, int ShopId) : IRequest<int>
 {
     public string? Name { get; init; } = Name?.Trim();
     public string? Description { get; init; } = Description?.Trim();
 }
 
-public class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
+public class CreateShopCategoryValidator : AbstractValidator<CreateShopCategoryCommand>
 {
-    public CreateCategoryValidator()
+    public CreateShopCategoryValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required.")
@@ -31,30 +31,33 @@ public class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
     }
 }
 
-public class CreateCategoryHandler(
+public class CreateShopCategoryHandler(
     IApplicationDbContext dbContext,
     ICurrentUser currentUser,
     IUserService userService,
-    IOriginContext originContext) : IRequestHandler<CreateCategoryCommand, int>
+    IOriginContext originContext) : IRequestHandler<CreateShopCategoryCommand, int>
 {
     private const int MaxCategoriesPerShop = 7;
 
-    public async Task<int> Handle(CreateCategoryCommand request, CancellationToken ct)
+    public async Task<int> Handle(CreateShopCategoryCommand request, CancellationToken ct)
     {
         var user = await userService.FindByIdAsync(currentUser.Id, ct) ?? throw new UnauthorizedAccessException();
 
         if (!user.Roles.Contains(originContext.OriginRole))
             throw new ForbiddenException("You are not authorized to create categories for this shop.");
 
-        var isAuthorized = originContext.OriginRole switch
+        var shopQuery = dbContext.Shops.AsNoTracking().Where(s => s.Id == request.ShopId);
+        var userId = currentUser.Id;
+
+        bool shopExists = originContext.OriginRole switch
         {
-            UserRole.Admin => true,
-            UserRole.Owner => await dbContext.ShopOwners.AnyAsync(so => so.UserId == currentUser.Id && so.ShopId == request.ShopId, ct),
-            UserRole.Manager => await dbContext.ShopManagers.AnyAsync(sm => sm.UserId == currentUser.Id && sm.ShopId == request.ShopId, ct),
+            UserRole.Admin => await shopQuery.AnyAsync(s => !s.IsDeleted, ct),
+            UserRole.Owner => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Owners.Any(o => o.UserId == userId), ct),
+            UserRole.Manager => await shopQuery.AnyAsync(s => s.Id != 1 && !s.IsDeleted && s.Managers.Any(m => m.UserId == userId), ct),
             _ => false
         };
 
-        if (!isAuthorized)
+        if (!shopExists)
             throw new ShopNotFoundException();
 
         var categoryCount = await dbContext.Categories.CountAsync(c => c.ShopId == request.ShopId, ct);

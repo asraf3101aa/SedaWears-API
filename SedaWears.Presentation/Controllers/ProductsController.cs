@@ -20,9 +20,9 @@ public class ProductsController(ISender mediator) : ControllerBase
         [FromQuery] SortOrder sortOrder = SortOrder.Asc,
         [FromQuery] string? search = null,
         CancellationToken ct = default)
-        => Ok(await mediator.Send(new GetProductsQuery(shopId, categoryId, pageNumber, pageSize, sortBy, sortOrder, search), ct));
+        => Ok(await mediator.Send(new GetShopCategoryProductsQuery(shopId, categoryId, pageNumber, pageSize, sortBy, sortOrder, search), ct));
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetProduct(int id, [FromQuery] int shopId, [FromQuery] int categoryId, CancellationToken ct)
-        => Ok(await mediator.Send(new GetProductQuery(id, shopId, categoryId), ct));
+        => Ok(await mediator.Send(new GetShopCategoryProductQuery(id, shopId, categoryId), ct));
 }
